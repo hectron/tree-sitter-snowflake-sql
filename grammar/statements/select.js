@@ -18,17 +18,8 @@ export default {
     $.identifier,
     optional(paren_list(field("argument", $.identifier))),
     $.keyword_as,
-    optional(
-      seq(
-        optional($.keyword_not),
-        $.keyword_materialized,
-      ),
-    ),
     wrapped_in_parenthesis(
-      alias(
-        choice($._dml_read, $._dml_write),
-        $.statement,
-      ),
+      alias($._dml_read, $.statement),
     ),
   ),
 
@@ -49,7 +40,12 @@ export default {
     ),
   ),
 
-  _select_statement: $ => optional_parenthesis(
+  _select_statement: $ => choice(
+    $._select_body,
+    seq('(', $._select_body, ')'),
+  ),
+
+  _select_body: $ => prec.right(
     seq(
       $.select,
       optional(
@@ -60,12 +56,14 @@ export default {
       ),
       optional($.from),
       optional($.where),
+      optional($.hierarchical_query),
       optional($.group_by),
       optional($.having),
       optional($.qualify),
       optional($.window_clause),
       optional($.order_by),
       optional($.limit),
+      optional(seq($.keyword_for, $.keyword_update)),
     ),
   ),
 
@@ -73,6 +71,7 @@ export default {
     $.keyword_select,
     seq(
       optional($.keyword_distinct),
+      optional(seq($.keyword_top, $.literal)),
       $.select_expression,
     ),
   ),
@@ -85,6 +84,8 @@ export default {
         $.term,
       ),
     ),
+    // Snowflake allows a trailing comma before FROM
+    optional(','),
   ),
 
   term: $ => seq(
@@ -92,6 +93,8 @@ export default {
       'value',
       choice(
         $.all_fields,
+        // f((*)) / f((t.*)): wildcard in parentheses
+        alias(wrapped_in_parenthesis($.all_fields), $.list),
         $._expression,
       ),
     ),
@@ -106,19 +109,18 @@ export default {
       ),
     ),
     '*',
-    // Snowflake: SELECT * EXCLUDE (col1, col2) RENAME (col1 AS new_col1)
-    optional(seq(
-      $.keyword_exclude,
-      paren_list($.identifier, true),
-    )),
-    optional(seq(
-      $.keyword_rename,
-      paren_list(
-        seq($.identifier, $.keyword_as, $.identifier),
-        true,
-      ),
+    // Snowflake: SELECT * ILIKE 'pattern' EXCLUDE (a, b) REPLACE (expr AS c) RENAME (a AS b)
+    // EXCLUDE and RENAME take a single bare item or a parenthesized list.
+    optional(seq($.keyword_like, $._literal_string)),
+    repeat(choice(
+      seq($.keyword_exclude, choice(paren_list($.identifier, true), $.identifier)),
+      seq($.keyword_replace, choice(paren_list($._star_replacement, true), $._star_replacement)),
+      seq($.keyword_rename, choice(paren_list($._star_rename, true), $._star_rename)),
     )),
   )),
+
+  _star_replacement: $ => seq($._expression, $.keyword_as, $.identifier),
+  _star_rename: $ => seq($.identifier, $.keyword_as, $.identifier),
 
   partition_by: $ => seq(
       $.keyword_partition,
@@ -166,7 +168,6 @@ export default {
       choice(
           $.keyword_range,
           $.keyword_rows,
-          $.keyword_groups,
       ),
 
       choice(
@@ -183,14 +184,6 @@ export default {
           seq(
               $.frame_definition,
           )
-      ),
-      optional(
-          choice(
-              $._exclude_current_row,
-              $._exclude_group,
-              $._exclude_ties,
-              $._exclude_no_others,
-          ),
       ),
   ),
 
@@ -211,6 +204,8 @@ export default {
 
   window_function: $ => seq(
       $.invocation,
+      optional(choice($.keyword_from_first, $.keyword_from_last)),
+      optional(seq(choice($.keyword_ignore, $.keyword_respect), $.keyword_nulls)),
       $.keyword_over,
       choice(
           $.identifier,
@@ -225,14 +220,14 @@ export default {
 
   from: $ => seq(
     $.keyword_from,
-    optional(
-      $.keyword_only,
-    ),
-    comma_list(choice($.relation, $.lateral_relation), true),
-    optional($.index_hint),
+    choice($.relation, $.lateral_relation),
     repeat(
       choice(
+        // comma-separated relations, possibly mixed with joins:
+        // FROM a, b JOIN c ON x, LATERAL FLATTEN(..)
+        seq(',', choice($.relation, $.lateral_relation)),
         $.join,
+        $.asof_join,
         $.cross_join,
         $.lateral_join,
         $.lateral_cross_join,
@@ -246,17 +241,43 @@ export default {
         $.subquery,
         $.invocation,
         $.object_reference,
-        $.stage_reference,
+        // @stage (FILE_FORMAT => 'f', PATTERN => 'p')
+        seq($.stage_reference, optional($.stage_arguments)),
         wrapped_in_parenthesis($.values),
         $.values,
+        $.semantic_view_call,
+        // $1: result of the previous statement (SHOW .. ->> SELECT .. FROM $1)
+        $.parameter,
+        wrapped_in_parenthesis(seq($.relation, repeat1(choice($.join, $.cross_join)))),
+        wrapped_in_parenthesis(seq($.values, optional($._relation_alias))),
       ),
-      optional(
-        seq(
-          $._alias,
-          optional(alias($._column_list, $.list)),
-        ),
-      ),
+      optional(choice(
+        seq(repeat1($._relation_modifier), optional($._relation_alias)),
+        $._relation_alias,
+      )),
+      optional($.table_sample),
     ),
+  ),
+
+  // AT and BEFORE are time-travel keywords but remain usable as table aliases
+  _relation_alias: $ => seq(
+    optional($.keyword_as),
+    field('alias', choice($.identifier, alias($.keyword_at, $.identifier), alias($.keyword_before, $.identifier))),
+    optional(alias($._column_list, $.list)),
+    repeat($._relation_modifier),
+  ),
+
+  stage_arguments: $ => paren_list($.named_parameter, true),
+
+  // Snowflake: SAMPLE | TABLESAMPLE [method] (probability | n ROWS) [REPEATABLE | SEED (n)]
+  table_sample: $ => seq(
+    choice($.keyword_sample, $.keyword_tablesample),
+    optional(choice($.keyword_bernoulli, $.keyword_row, $.keyword_system, $.keyword_block)),
+    '(',
+    $.literal,
+    optional($.keyword_rows),
+    ')',
+    optional(seq(choice($.keyword_repeatable, $.keyword_seed), '(', $.literal, ')')),
   ),
 
   // Snowflake: LATERAL FLATTEN(...) or LATERAL subquery in comma-separated FROM
@@ -284,42 +305,14 @@ export default {
     ),
   )),
 
-  index_hint: $ => seq(
-    choice(
-      $.keyword_force,
-      // $.keyword_use, // removed: conflicts with Snowflake USE DATABASE/SCHEMA/WAREHOUSE/ROLE
-      $.keyword_ignore,
-    ),
-    $.keyword_index,
-    optional(
-      seq(
-        $.keyword_for,
-        $.keyword_join,
-      ),
-    ),
-    wrapped_in_parenthesis(
-      field('index_name', $.identifier),
-    ),
-  ),
-
   join: $ => seq(
     optional($.keyword_natural),
-    optional(
-      choice(
-        $.keyword_left,
-        seq($.keyword_full, $.keyword_outer),
-        seq($.keyword_left, $.keyword_outer),
-        $.keyword_right,
-        seq($.keyword_right, $.keyword_outer),
-        $.keyword_inner,
-        $.keyword_full,
-      ),
-    ),
+    optional($._join_side),
+    optional($.keyword_directed),
     $.keyword_join,
     $.relation,
-    optional($.index_hint),
     optional($.join),
-    choice(
+    optional(choice(
       seq(
         $.keyword_on,
         field("predicate", $._expression),
@@ -328,39 +321,27 @@ export default {
         $.keyword_using,
         alias($._column_list, $.list),
       )
-    )
+    )),
+    optional(seq(choice($.keyword_first, $.keyword_last), wrapped_in_parenthesis($.identifier))),
+  ),
+
+  // INNER | {LEFT | RIGHT | FULL} [OUTER]
+  _join_side: $ => choice(
+    $.keyword_inner,
+    seq(choice($.keyword_left, $.keyword_right, $.keyword_full), optional($.keyword_outer)),
   ),
 
   cross_join: $ => prec.right(
     seq(
       $.keyword_cross,
+      optional($.keyword_directed),
       $.keyword_join,
       $.relation,
-      optional(
-        seq(
-          $.keyword_with,
-          $.keyword_ordinality,
-          optional(
-            seq(
-              $.keyword_as,
-              field("alias", $.identifier),
-              paren_list($.identifier),
-            )
-          )
-        )
-      )
     )
   ),
 
   lateral_join: $ => seq(
-    optional(
-      choice(
-        // lateral joins cannot be right!
-        $.keyword_left,
-        seq($.keyword_left, $.keyword_outer),
-        $.keyword_inner,
-      ),
-    ),
+    optional($._join_side),
     $.keyword_join,
     $.keyword_lateral,
     choice(
@@ -376,12 +357,15 @@ export default {
         field('alias', $.identifier),
       ),
     ),
-    $.keyword_on,
-    choice(
-      $._expression,
-      $.keyword_true,
-      $.keyword_false,
-    ),
+    // Snowflake: JOIN LATERAL FLATTEN(..) takes no ON clause
+    optional(seq(
+      $.keyword_on,
+      choice(
+        $._expression,
+        $.keyword_true,
+        $.keyword_false,
+      ),
+    )),
   ),
 
   lateral_cross_join: $ => seq(
@@ -413,7 +397,7 @@ export default {
     $.keyword_by,
     choice(
       $.keyword_all,
-      comma_list($._expression, true),
+      comma_list(choice($._expression, $.grouping_sets), true),
     ),
   )),
 
@@ -430,28 +414,21 @@ export default {
   order_by: $ => prec.right(seq(
     $.keyword_order,
     $.keyword_by,
-    comma_list($.order_target, true),
+    choice(
+      seq($.keyword_all, optional($.direction), optional(seq($.keyword_nulls, choice($.keyword_first, $.keyword_last)))),
+      comma_list($.order_target, true),
+    ),
   )),
 
   order_target: $ => seq(
     $._expression,
+    optional($.direction),
     optional(
       seq(
+        $.keyword_nulls,
         choice(
-          $.direction,
-          seq(
-            $.keyword_using,
-            choice('<', '>', '<=', '>='),
-          ),
-        ),
-        optional(
-          seq(
-            $.keyword_nulls,
-            choice(
-              $.keyword_first,
-              $.keyword_last,
-            ),
-          ),
+          $.keyword_first,
+          $.keyword_last,
         ),
       ),
     ),
@@ -459,18 +436,13 @@ export default {
 
   limit: $ => seq(
     $.keyword_limit,
-    $.literal,
+    choice($.literal, $.snowflake_variable_reference),
     optional($.offset),
   ),
 
   offset: $ => seq(
     $.keyword_offset,
-    $.literal,
-  ),
-
-  returning: $ => seq(
-    $.keyword_returning,
-    $.select_expression,
+    choice($.literal, $.snowflake_variable_reference),
   ),
 
 };

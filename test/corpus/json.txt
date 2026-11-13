@@ -5,9 +5,7 @@ JSON traversal
 SELECT
     "user"->>'login' as login,
     "user"->'address' ->> 'city',
-    "user"->'address' ->> 'state' as userstate,
-    "user" #> 'items',
-    "user" #>> 'more_items' AS more
+    "user"->'address' ->> 'state' as userstate
 FROM users;
 
 --------------------------------------------------------------------------------
@@ -38,18 +36,6 @@ FROM users;
               left: (literal)
               operator: (op_other)
               right: (literal))
-            operator: (op_other)
-            right: (literal))
-          (keyword_as)
-          alias: (identifier))
-        (term
-          value: (binary_expression
-            left: (literal)
-            operator: (op_other)
-            right: (literal)))
-        (term
-          value: (binary_expression
-            left: (literal)
             operator: (op_other)
             right: (literal))
           (keyword_as)

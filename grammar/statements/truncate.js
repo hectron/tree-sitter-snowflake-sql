@@ -1,13 +1,11 @@
-import { comma_list } from "../helpers.js";
-
 export default {
 
+  // Snowflake: TRUNCATE [TABLE] [IF EXISTS] name
   _truncate_statement: $ => seq(
     $.keyword_truncate,
     optional($.keyword_table),
-    optional($.keyword_only),
-    comma_list($.object_reference),
-    optional($._drop_behavior),
+    optional($._if_exists),
+    $.object_reference,
   ),
 
 };

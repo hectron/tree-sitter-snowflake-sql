@@ -2,78 +2,48 @@ import { comma_list } from "../helpers.js";
 
 export default {
 
-  _insert_statement: $ => seq(
-    $.insert,
-    optional($.returning),
-  ),
+  _insert_statement: $ => $.insert,
 
+  // Snowflake: INSERT [OVERWRITE] INTO t [(cols)] { VALUES (..), .. | query }
   insert: $ => seq(
-    choice(
-      $.keyword_insert,
-      $.keyword_replace
-    ),
-    optional(
-      choice(
-        $.keyword_low_priority,
-        $.keyword_delayed,
-        $.keyword_high_priority,
-      ),
-    ),
-    optional($.keyword_ignore),
-    optional(
-      choice(
-        $.keyword_into,
-        $.keyword_overwrite, // Spark SQL
-      ),
-    ),
+    $.keyword_insert,
+    optional($.keyword_overwrite),
+    $.keyword_into,
     $.object_reference,
-    optional($.table_partition), // Spark SQL
-    optional(
-      seq(
-        $.keyword_as,
-        field('alias', $.identifier)
-      ),
-    ),
-    // TODO we need a test for `insert...set`
+    $._insert_values,
+  ),
+
+  // Snowflake multi-table insert:
+  // INSERT [OVERWRITE] {ALL | FIRST} { WHEN cond THEN into_clause+ }... [ELSE into_clause] query
+  multi_table_insert: $ => seq(
+    $.keyword_insert,
+    optional($.keyword_overwrite),
+    choice($.keyword_all, $.keyword_first),
     choice(
-      $._insert_values,
-      $._set_values,
+      seq(repeat1($.multi_insert_when), optional($.multi_insert_else)),
+      repeat1($.multi_insert_into),
     ),
-    optional(
-      choice(
-        $._on_conflict,
-        $._on_duplicate_key_update,
-      ),
-    ),
+    $._dml_read,
   ),
 
-  _on_conflict: $ => seq(
-    $.keyword_on,
-    $.keyword_conflict,
-    seq(
-      $.keyword_do,
-      choice(
-        $.keyword_nothing,
-        seq(
-          $.keyword_update,
-          $._set_values,
-          optional($.where),
-        ),
-      ),
-    ),
+  multi_insert_when: $ => seq(
+    $.keyword_when,
+    field('condition', $._expression),
+    $.keyword_then,
+    repeat1($.multi_insert_into),
   ),
 
-  _on_duplicate_key_update: $ => seq(
-    $.keyword_on,
-    $.keyword_duplicate,
-    $.keyword_key,
-    $.keyword_update,
-    $.assignment_list,
+  multi_insert_else: $ => seq(
+    $.keyword_else,
+    repeat1($.multi_insert_into),
   ),
 
-  assignment_list: $ => seq(
-    $.assignment,
-    repeat(seq(',', $.assignment)),
+  // INTO table [(columns)] [VALUES (exprs)]
+  multi_insert_into: $ => seq(
+    $.keyword_into,
+    $.object_reference,
+    optional(alias($._column_list, $.list)),
+    optional(prec.dynamic(1, seq($.keyword_values, $.list))),
   ),
 
   assignment: $ => seq(

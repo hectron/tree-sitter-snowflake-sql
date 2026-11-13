@@ -1,0 +1,3394 @@
+================================================================================
+CREATE TABLE variants, constraints and column features
+================================================================================
+
+CREATE OR ALTER TABLE tt1 (a INT PRIMARY KEY, b VARCHAR(20) COLLATE 'fr') DEFAULT_DDL_COLLATION = 'de';
+CREATE LOCAL TEMPORARY TABLE tt2 (i INT);
+CREATE TABLE tt3 (c1, c2) AS SELECT x, y FROM src;
+CREATE TABLE tt4 CLONE tt3 BEFORE (STATEMENT => 'abc') IGNORE HYBRID TABLES;
+CREATE TABLE tt5 USING TEMPLATE (SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*)) FROM TABLE(INFER_SCHEMA(LOCATION => '@s/p/', FILE_FORMAT => 'ff')));
+CREATE TABLE tt6 (id INT IDENTITY START 1 INCREMENT 2 NOORDER, k INT AUTOINCREMENT (5, 10), v NUMBER(10, 2) CHECK (v > 0) NOT ENFORCED) COPY GRANTS COPY TAGS WITH TAG (env = 'dev') WITH ROW ACCESS POLICY rap1 ON (id) WITH AGGREGATION POLICY ap1 ENTITY KEY (id);
+CREATE TABLE tt7 (a INT, b INT, CONSTRAINT pk1 PRIMARY KEY (a, b) NOT ENFORCED RELY, CONSTRAINT fk1 FOREIGN KEY (b) REFERENCES tt6 (id) DEFERRABLE INITIALLY DEFERRED, UNIQUE (a) DISABLE COMMENT 'u', CHECK (b > 0));
+CREATE TABLE tt8 (a INT NOT NULL CONSTRAINT u1 UNIQUE NOT ENFORCED, c INT AS (a + 1) VIRTUAL PROJECTION POLICY pp1 TAG (t1 = 'x')) COPY = (COMMENTS, TAGS, GRANTS) WITH CONTACT (support = c1);
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_primary)
+          (keyword_key))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar)
+            size: (literal))
+          (keyword_collate)))
+      (table_option
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_local)
+      (keyword_temporary)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (list
+        (column
+          (identifier))
+        (column
+          (identifier)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier))
+        (at_before
+          (keyword_before)
+          (time_travel_parameter
+            name: (keyword_statement)
+            value: (literal)))
+        (ignore_clause
+          (keyword_ignore)
+          (keyword_hybrid)
+          (keyword_tables)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_using)
+      (keyword_template)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (invocation
+                  (object_reference
+                    name: (identifier))
+                  parameter: (term
+                    value: (all_fields))))))))
+      (from
+        (keyword_from)
+        (relation
+          (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (named_parameter
+                  name: (identifier)
+                  value: (literal))
+                parameter: (named_parameter
+                  name: (identifier)
+                  value: (literal)))))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_identity)
+          (keyword_start)
+          (literal)
+          (keyword_increment)
+          (literal)
+          (keyword_noorder))
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_autoincrement)
+          (literal)
+          (literal))
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number)
+            precision: (literal)
+            scale: (literal))
+          (keyword_check)
+          (binary_expression
+            left: (field
+              name: (identifier))
+            right: (literal))
+          (constraint_property
+            (keyword_not)
+            (keyword_enforced))))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))
+      (copy_clause
+        (keyword_copy)
+        (keyword_tags))
+      (with_tag_clause
+        (keyword_with)
+        (keyword_tag)
+        (tag_assignment
+          name: (object_reference
+            name: (identifier))
+          value: (literal)))
+      (policy_clause
+        (keyword_with)
+        (keyword_row)
+        (keyword_access)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_on)
+        (identifier))
+      (policy_clause
+        (keyword_with)
+        (keyword_aggregation)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_entity)
+        (keyword_key)
+        (identifier))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int)))
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int)))
+        (constraints
+          (constraint
+            (keyword_constraint)
+            name: (identifier)
+            (keyword_primary)
+            (keyword_key)
+            (ordered_columns
+              (column
+                name: (identifier))
+              (column
+                name: (identifier)))
+            (constraint_property
+              (keyword_not)
+              (keyword_enforced))
+            (constraint_property
+              (keyword_rely)))
+          (constraint
+            (keyword_constraint)
+            name: (identifier)
+            (keyword_foreign)
+            (keyword_key)
+            (ordered_columns
+              (column
+                name: (identifier)))
+            (keyword_references)
+            (object_reference
+              name: (identifier))
+            (identifier)
+            (constraint_property
+              (keyword_deferrable))
+            (constraint_property
+              (keyword_initially)
+              (keyword_deferred)))
+          (constraint
+            (keyword_unique)
+            (ordered_columns
+              (column
+                name: (identifier)))
+            (constraint_property
+              (keyword_disable))
+            (keyword_comment)
+            (literal))
+          (constraint
+            (keyword_check)
+            (binary_expression
+              left: (field
+                name: (identifier))
+              right: (literal)))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_not)
+          (keyword_null)
+          (keyword_constraint)
+          (identifier)
+          (keyword_unique)
+          (constraint_property
+            (keyword_not)
+            (keyword_enforced)))
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_as)
+          (parenthesized_expression
+            (binary_expression
+              left: (field
+                name: (identifier))
+              right: (literal)))
+          (keyword_virtual)
+          (keyword_projection)
+          (keyword_policy)
+          (object_reference
+            name: (identifier))
+          (with_tag_clause
+            (keyword_tag)
+            (tag_assignment
+              name: (object_reference
+                name: (identifier))
+              value: (literal)))))
+      (copy_clause
+        (keyword_copy)
+        (identifier)
+        (identifier)
+        (identifier))
+      (contact_clause
+        (keyword_with)
+        (keyword_contact)
+        name: (identifier)
+        value: (identifier)))))
+
+================================================================================
+ALTER TABLE and VIEW: swap, policies, constraints, tags
+================================================================================
+
+ALTER TABLE a1 SWAP WITH a2;
+ALTER TABLE a1 ADD ROW ACCESS POLICY rap1 ON (c1, c2), DROP ROW ACCESS POLICY rap0;
+ALTER TABLE a1 SET JOIN POLICY jp1 ALLOWED JOIN KEYS (k1);
+ALTER TABLE a1 SUSPEND RECLUSTER;
+ALTER TABLE a1 ALTER CONSTRAINT pk1 RELY;
+ALTER TABLE a1 MODIFY CONSTRAINT PRIMARY KEY NOT ENFORCED;
+ALTER TABLE a1 SET TAG t1 = 'x', t2 = 'y';
+ALTER TABLE a1 UNSET TAG t1;
+ALTER TABLE a1 ALTER (c1 DROP NOT NULL, c2 COMMENT 'note', COLUMN c3 SET DEFAULT s1.NEXTVAL);
+ALTER VIEW v1 SET SECURE;
+ALTER VIEW v1 UNSET SECURE;
+ALTER VIEW v1 DROP ROW ACCESS POLICY rap0, ADD ROW ACCESS POLICY rap1 ON (c1);
+ALTER VIEW v1 SET TAG t1 = 'x';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_swap)
+      (keyword_with)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (policy_clause
+        (keyword_row)
+        (keyword_access)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_on)
+        (identifier)
+        (identifier))
+      (keyword_drop)
+      (policy_clause
+        (keyword_row)
+        (keyword_access)
+        (keyword_policy)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (policy_clause
+        (keyword_join)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_allowed)
+        (keyword_join)
+        (keyword_keys)
+        (identifier))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_suspend)
+      (keyword_recluster)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_alter)
+      (keyword_constraint)
+      (identifier)
+      (constraint_property
+        (keyword_rely))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_modify)
+      (keyword_constraint)
+      (keyword_primary)
+      (keyword_key)
+      (constraint_property
+        (keyword_not)
+        (keyword_enforced))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (tag_assignments
+        (keyword_tag)
+        (tag_assignment
+          name: (object_reference
+            name: (identifier))
+          value: (literal))
+        (tag_assignment
+          name: (object_reference
+            name: (identifier))
+          value: (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_unset)
+      (tag_names
+        (keyword_tag)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_alter)
+      (alter_column
+        name: (identifier)
+        (keyword_drop)
+        (keyword_not)
+        (keyword_null))
+      (alter_column
+        name: (identifier)
+        (keyword_comment)
+        (literal))
+      (keyword_column)
+      name: (identifier)
+      (keyword_set)
+      (keyword_default)
+      (field
+        (object_reference
+          name: (identifier))
+        name: (identifier))))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (keyword_secure)))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_unset)
+      (keyword_secure)))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (policy_clause
+        (keyword_row)
+        (keyword_access)
+        (keyword_policy)
+        (object_reference
+          name: (identifier)))
+      (keyword_add)
+      (policy_clause
+        (keyword_row)
+        (keyword_access)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_on)
+        (identifier))))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (tag_assignments
+        (keyword_tag)
+        (tag_assignment
+          name: (object_reference
+            name: (identifier))
+          value: (literal))))))
+
+================================================================================
+COPY INTO table and location, COPY FILES
+================================================================================
+
+COPY INTO tgt FILE_FORMAT = (TYPE = CSV);
+COPY INTO tgt (a, b) FROM s3://bucket/data/files STORAGE_INTEGRATION = si1 FILE_FORMAT = (FORMAT_NAME = ff1) PATTERN = '.*[.]csv' PURGE = TRUE;
+COPY INTO tgt FROM 'azure://acct.blob.core.windows.net/c/p' CREDENTIALS = (AZURE_SAS_TOKEN = 'x') MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+COPY INTO 's3://bucket/unload/' FROM tgt STORAGE_INTEGRATION = si1 FILE_FORMAT = (TYPE = PARQUET);
+COPY INTO @st/out/ FROM (SELECT a FROM tgt) PARTITION BY ('d=' || TO_VARCHAR(dt)) HEADER = TRUE;
+COPY FILES INTO @dst FROM @src PATTERN = '.*sales.*[.]csv' DETAILED_OUTPUT = TRUE;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      (list
+        (column
+          (identifier))
+        (column
+          (identifier)))
+      (keyword_from)
+      (external_location)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal
+        (keyword_true))))
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      (keyword_from)
+      (literal)
+      name: (identifier)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (literal)
+      (keyword_from)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (stage_reference)
+      (keyword_from)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier))))
+      (partition_by
+        (keyword_partition)
+        (keyword_by)
+        (parenthesized_expression
+          (binary_expression
+            left: (literal)
+            operator: (op_other)
+            right: (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (field
+                  name: (identifier)))))))
+      name: (identifier)
+      value: (literal
+        (keyword_true))))
+  (statement
+    (snowflake_statement
+      (copy_files_statement
+        (keyword_copy)
+        (keyword_files)
+        (keyword_into)
+        (stage_reference)
+        (keyword_from)
+        (stage_reference)
+        name: (identifier)
+        value: (literal)
+        name: (identifier)
+        value: (literal
+          (keyword_true))))))
+
+================================================================================
+PUT, GET, LS and REMOVE with file URLs
+================================================================================
+
+PUT file:///tmp/data/**.csv @my_stage AUTO_COMPRESS = FALSE;
+PUT file://C:\temp\data\f.csv @~;
+GET @st/path file:///tmp/dl/;
+LS @st/path PATTERN = '.*gz';
+REMOVE @st/path1/sub;
+RM @~ PATTERN = '.*jun.*';
+REMOVE @%tbl1;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (put_statement
+        (keyword_put)
+        (file_url)
+        (stage_reference)
+        name: (identifier)
+        value: (literal
+          (keyword_false)))))
+  (statement
+    (snowflake_statement
+      (put_statement
+        (keyword_put)
+        (file_url)
+        (stage_reference))))
+  (statement
+    (snowflake_statement
+      (get_statement
+        (keyword_get)
+        (stage_reference)
+        (file_url))))
+  (statement
+    (snowflake_statement
+      (list_statement
+        (keyword_ls)
+        (stage_reference)
+        (keyword_pattern)
+        (literal))))
+  (statement
+    (snowflake_statement
+      (remove_statement
+        (keyword_remove)
+        (stage_reference))))
+  (statement
+    (snowflake_statement
+      (remove_statement
+        (keyword_rm)
+        (stage_reference)
+        (keyword_pattern)
+        (literal))))
+  (statement
+    (snowflake_statement
+      (remove_statement
+        (keyword_remove)
+        (stage_reference)))))
+
+================================================================================
+Functions: OR ALTER, service functions, masking policy column actions
+================================================================================
+
+CREATE OR ALTER SECURE FUNCTION f1(a NUMBER, b NUMBER) RETURNS NUMBER COMMENT = 'mul' AS 'a * b';
+CREATE FUNCTION f2(t VARCHAR) RETURNS VARCHAR SERVICE = svc1 ENDPOINT = ep1 CONTEXT_HEADERS = (current_account) MAX_BATCH_ROWS = 100 AS '/echo';
+CREATE FUNCTION f3() RETURNS TABLE () AS $$ SELECT 1 $$;
+CREATE OR REPLACE FUNCTION f4() RETURNS INT COPY = (GRANTS) AS $$ SELECT 1 $$;
+CREATE OR ALTER MASKING POLICY mp1 AS (val STRING) RETURNS STRING -> CASE WHEN CURRENT_ROLE() IN ('A') THEN val ELSE '***' END COMMENT = 'mask';
+ALTER TABLE t1 MODIFY COLUMN email SET MASKING POLICY mp1 USING (email, vis) FORCE;
+ALTER TABLE t1 MODIFY COLUMN email UNSET MASKING POLICY;
+ALTER TABLE t1 ALTER COLUMN c1 SET PROJECTION POLICY pp1;
+ALTER TABLE t1 ALTER COLUMN c1 SET TAG t1 = 'a';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_secure)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number)))
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))))
+      (keyword_returns)
+      (number
+        (keyword_number))
+      (procedure_comment
+        (keyword_comment)
+        (literal))
+      (function_body
+        (keyword_as)
+        (literal))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (list
+        (identifier))
+      name: (identifier)
+      value: (literal)
+      (function_body
+        (keyword_as)
+        (literal))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (keyword_table)
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                value: (literal)))))
+        (dollar_quote))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments)
+      (keyword_returns)
+      (int
+        (keyword_int))
+      (copy_clause
+        (keyword_copy)
+        (identifier))
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                value: (literal)))))
+        (dollar_quote))))
+  (statement
+    (create_policy
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_masking)
+      (keyword_policy)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_string)))
+      (keyword_returns)
+      (keyword_string)
+      (case
+        (keyword_case)
+        (keyword_when)
+        (binary_expression
+          left: (invocation
+            (object_reference
+              name: (identifier)))
+          operator: (keyword_in)
+          right: (list
+            (literal)))
+        (keyword_then)
+        (field
+          name: (identifier))
+        (keyword_else)
+        (literal)
+        (keyword_end))
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (modify_column
+        (keyword_modify)
+        (keyword_column)
+        name: (identifier)
+        (keyword_set)
+        (keyword_masking)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_using)
+        (identifier)
+        (identifier)
+        (keyword_force))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (modify_column
+        (keyword_modify)
+        (keyword_column)
+        name: (identifier)
+        (keyword_unset)
+        (keyword_masking)
+        (keyword_policy))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (alter_column
+        (keyword_alter)
+        (keyword_column)
+        name: (identifier)
+        (keyword_set)
+        (keyword_projection)
+        (keyword_policy)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (alter_column
+        (keyword_alter)
+        (keyword_column)
+        name: (identifier)
+        (keyword_set)
+        (tag_assignments
+          (keyword_tag)
+          (tag_assignment
+            name: (object_reference
+              name: (identifier))
+            value: (literal)))))))
+
+================================================================================
+Procedures: options before RETURNS, CALL WITH ephemeral procedures
+================================================================================
+
+CREATE OR ALTER PROCEDURE p1(a STRING, n INT DEFAULT 3) RETURNS TABLE (d DATE, q NUMBER) LANGUAGE SQL STRICT COPY = (GRANTS) EXECUTE AS CALLER AS $$ BEGIN RETURN 1; END $$;
+CREATE PROCEDURE p2() RETURNS TABLE () LANGUAGE SQL AS $$ BEGIN RETURN 1; END $$;
+WITH tmp1 AS PROCEDURE (x INT) RETURNS VARCHAR LANGUAGE PYTHON RUNTIME_VERSION = '3.10' PACKAGES = ('snowflake-snowpark-python') HANDLER = 'run' AS $$ def run(session, x): return 'a' $$ CALL tmp1(5);
+WITH tmp2 AS PROCEDURE () RETURNS NUMBER LANGUAGE SQL AS $$ BEGIN RETURN 7; END $$ CALL tmp2() INTO :res;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_string))
+        (function_argument
+          (identifier)
+          (int
+            (keyword_int))
+          (keyword_default)
+          (literal)))
+      (procedure_returns
+        (keyword_returns)
+        (keyword_table)
+        (procedure_returns_column
+          name: (identifier)
+          type: (keyword_date))
+        (procedure_returns_column
+          name: (identifier)
+          type: (number
+            (keyword_number))))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (function_strictness
+        (keyword_strict))
+      (copy_clause
+        (keyword_copy)
+        (identifier))
+      (procedure_execute_as
+        (keyword_execute)
+        (keyword_as)
+        (keyword_caller))
+      (procedure_body
+        (keyword_as)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (return_statement
+            (keyword_return)
+            value: (literal))
+          (keyword_end))
+        (dollar_quote))))
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments)
+      (procedure_returns
+        (keyword_returns)
+        (keyword_table))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (procedure_body
+        (keyword_as)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (return_statement
+            (keyword_return)
+            value: (literal))
+          (keyword_end))
+        (dollar_quote))))
+  (statement
+    (snowflake_statement
+      (call_with_procedure
+        (keyword_with)
+        (identifier)
+        (keyword_as)
+        (keyword_procedure)
+        (function_arguments
+          (function_argument
+            (identifier)
+            (int
+              (keyword_int))))
+        (procedure_returns
+          (keyword_returns)
+          (varchar
+            (keyword_varchar)))
+        (routine_language
+          (keyword_language)
+          (keyword_python))
+        (routine_property
+          name: (keyword_runtime_version)
+          value: (literal))
+        (routine_property
+          name: (keyword_packages)
+          value: (routine_property_list
+            (literal)))
+        (routine_property
+          name: (keyword_handler)
+          value: (literal))
+        (routine_body
+          (keyword_as)
+          (literal))
+        (call_statement
+          (keyword_call)
+          (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (literal)))))))
+  (statement
+    (snowflake_statement
+      (call_with_procedure
+        (keyword_with)
+        (identifier)
+        (keyword_as)
+        (keyword_procedure)
+        (function_arguments)
+        (procedure_returns
+          (keyword_returns)
+          (number
+            (keyword_number)))
+        (function_language
+          (keyword_language)
+          (identifier))
+        (procedure_body
+          (keyword_as)
+          (dollar_quote)
+          (snowflake_scripting_block
+            (keyword_begin)
+            (return_statement
+              (keyword_return)
+              value: (literal))
+            (keyword_end))
+          (dollar_quote))
+        (call_statement
+          (keyword_call)
+          (invocation
+            (object_reference
+              name: (identifier)))
+          (keyword_into)
+          (snowflake_variable_reference))))))
+
+================================================================================
+Iceberg, pipe, alert, tag, external table options, transactions, DMF attachment
+================================================================================
+
+CREATE OR REPLACE ICEBERG TABLE it1 EXTERNAL_VOLUME = 'ev' CATALOG = 'ci' CATALOG_TABLE_NAME = 'rt' AUTO_REFRESH = TRUE;
+CREATE ICEBERG TABLE it2 CATALOG = 'c' EXTERNAL_VOLUME = 'ev' BASE_LOCATION = 'p/' ENABLE_SCHEMA_INFERENCE = TRUE MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE;
+CREATE PIPE p1 AS (COPY INTO t FROM @s MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE INCLUDE_METADATA = (c1 = METADATA$START_SCAN_TIME) FILE_FORMAT = (TYPE = 'JSON'));
+CREATE OR REPLACE ALERT al1 FROM TEMPLATE tpl1 WAREHOUSE = w SCHEDULE = '30 MINUTE' TEMPLATE_PARAMS = '{ "a": 1 }';
+CREATE DYNAMIC TABLE dt9 CLONE dt0 COPY GRANTS;
+CREATE TAG tg1 ALLOWED_VALUES 'blue', 'red' PROPAGATE = ON_DEPENDENCY;
+CREATE EXTERNAL TABLE et1 (c1 VARCHAR AS (value:c1::VARCHAR), dp DATE AS (TO_DATE(SPLIT_PART(metadata$filename, '/', 3)))) PARTITION BY (dp) LOCATION = @s1/logs/ AUTO_REFRESH = TRUE FILE_FORMAT = (TYPE = PARQUET);
+CREATE INTERACTIVE MATERIALIZED VIEW IF NOT EXISTS mv1 AS SELECT SUM(q) AS tq FROM it;
+CREATE OR REPLACE STREAM s1 ON TABLE t1 COPY = (GRANTS);
+ALTER TASK tk1 REMOVE AFTER p1, p2;
+ALTER TASK tk1 ADD AFTER p3, p4;
+BEGIN NAME t1;
+START TRANSACTION NAME t2;
+EXECUTE USING POLICY_CONTEXT(CURRENT_ROLE => 'PUBLIC') AS SELECT * FROM t1;
+ALTER TABLE t1 ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.FRESHNESS ON ();
+ALTER VIEW v1 ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.ACCEPTED_VALUES ON (st, st -> st IN ('a', 'b')) EXPECTATION ok (VALUE = 0);
+SELECT SNOWFLAKE.CORE.AVG(SELECT salary FROM hr.t) AS a;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal
+          (keyword_true)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal
+          (keyword_true)))
+      (table_option
+        name: (identifier)
+        value: (identifier))))
+  (statement
+    (create_pipe
+      (keyword_create)
+      (keyword_pipe)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (statement
+        (snowflake_copy_into
+          (keyword_copy)
+          (keyword_into)
+          (object_reference
+            name: (identifier))
+          (keyword_from)
+          (stage_reference)
+          name: (identifier)
+          value: (identifier)
+          name: (identifier)
+          name: (identifier)
+          value: (identifier)
+          name: (identifier)
+          name: (identifier)
+          value: (literal)))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_from)
+      (keyword_template)
+      (identifier)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier)))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_allowed_values)
+      (literal)
+      (literal)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_as)
+          (parenthesized_expression
+            (cast
+              (variant_access
+                expression: (field
+                  name: (identifier))
+                path: (identifier))
+              (varchar
+                (keyword_varchar)))))
+        (column_definition
+          name: (identifier)
+          type: (keyword_date)
+          (keyword_as)
+          (parenthesized_expression
+            (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (invocation
+                  (object_reference
+                    name: (identifier))
+                  parameter: (term
+                    value: (field
+                      name: (identifier)))
+                  parameter: (term
+                    value: (literal))
+                  parameter: (term
+                    value: (literal))))))))
+      (table_partition
+        (keyword_partition)
+        (keyword_by)
+        (field
+          name: (identifier)))
+      name: (identifier)
+      value: (stage_reference)
+      name: (identifier)
+      value: (literal
+        (keyword_true))
+      name: (identifier)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_interactive)
+      (keyword_materialized)
+      (keyword_view)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (term
+                  value: (field
+                    name: (identifier))))
+              (keyword_as)
+              alias: (identifier))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_stream
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_stream)
+      (object_reference
+        name: (identifier))
+      (keyword_on)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (copy_clause
+        (keyword_copy)
+        (identifier))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_remove)
+      (keyword_after)
+      (object_reference
+        name: (identifier))
+      (object_reference
+        name: (identifier))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_after)
+      (object_reference
+        name: (identifier))
+      (object_reference
+        name: (identifier))))
+  (begin_transaction_statement
+    (keyword_begin)
+    (keyword_name)
+    (identifier))
+  (begin_transaction_statement
+    (keyword_start)
+    (keyword_transaction)
+    (keyword_name)
+    (identifier))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_using)
+        (keyword_policy_context)
+        (named_parameter
+          name: (identifier)
+          value: (literal))
+        (keyword_as)
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (all_fields))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_data)
+      (keyword_metric)
+      (keyword_function)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_on)))
+  (statement
+    (alter_view
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_data)
+      (keyword_metric)
+      (keyword_function)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_on)
+      (identifier)
+      (lambda_expression
+        (lambda_parameter
+          name: (identifier))
+        body: (binary_expression
+          left: (field
+            name: (identifier))
+          operator: (keyword_in)
+          right: (list
+            (literal)
+            (literal))))
+      (dmf_expectation
+        (keyword_expectation)
+        (identifier)
+        (binary_expression
+          left: (field
+            name: (identifier))
+          right: (literal)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (invocation
+            (object_reference
+              database: (identifier)
+              schema: (identifier)
+              name: (identifier))
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (field
+                    name: (identifier)))))
+            (from
+              (keyword_from)
+              (relation
+                (object_reference
+                  schema: (identifier)
+                  name: (identifier)))))
+          (keyword_as)
+          alias: (identifier))))))
+
+================================================================================
+CREATE SEMANTIC VIEW and spaced SEMANTIC VIEW() call
+================================================================================
+
+CREATE OR REPLACE SEMANTIC VIEW sv1
+  TABLES (
+    o AS db1.s1.orders PRIMARY KEY (oid) WITH SYNONYMS ('sales') COMMENT = 'orders',
+    c AS db1.s1.customers PRIMARY KEY (cid),
+    li AS db1.s1.items UNIQUE (a, b)
+  )
+  RELATIONSHIPS (
+    o_to_c AS o (cid) REFERENCES c,
+    li_to_o AS li (oid) REFERENCES o (oid)
+  )
+  FACTS (
+    li.disc AS price * (1 - rate) COMMENT = 'net'
+  )
+  DIMENSIONS (
+    c.cname AS cname,
+    PRIVATE o.oday AS DATE_TRUNC('DAY', ts) WITH SYNONYMS ('day')
+  )
+  METRICS (
+    o.total AS SUM(li.disc)
+  )
+  COMMENT = 'revenue';
+SELECT * FROM SEMANTIC VIEW(sv1 METRICS (o.total) DIMENSIONS (c.cname, o.oday AS d) WHERE c.cname = 'x');
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_semantic_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_semantic_view)
+      (object_reference
+        name: (identifier))
+      (semantic_section
+        (keyword_tables)
+        (semantic_table
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            database: (identifier)
+            schema: (identifier)
+            name: (identifier))
+          (keyword_primary)
+          (keyword_key)
+          (list
+            (column
+              (identifier)))
+          (keyword_with)
+          (keyword_synonyms)
+          (literal)
+          (procedure_comment
+            (keyword_comment)
+            (literal)))
+        (semantic_table
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            database: (identifier)
+            schema: (identifier)
+            name: (identifier))
+          (keyword_primary)
+          (keyword_key)
+          (list
+            (column
+              (identifier))))
+        (semantic_table
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            database: (identifier)
+            schema: (identifier)
+            name: (identifier))
+          (keyword_unique)
+          (list
+            (column
+              (identifier))
+            (column
+              (identifier)))))
+      (semantic_section
+        (keyword_relationships)
+        (semantic_relationship
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier)))
+          (keyword_references)
+          (object_reference
+            name: (identifier)))
+        (semantic_relationship
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier)))
+          (keyword_references)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier)))))
+      (semantic_section
+        (keyword_facts)
+        (semantic_item
+          name: (object_reference
+            schema: (identifier)
+            name: (identifier))
+          (keyword_as)
+          (binary_expression
+            left: (field
+              name: (identifier))
+            right: (parenthesized_expression
+              (binary_expression
+                left: (literal)
+                right: (field
+                  name: (identifier)))))
+          (procedure_comment
+            (keyword_comment)
+            (literal))))
+      (semantic_section
+        (keyword_dimensions)
+        (semantic_item
+          name: (object_reference
+            schema: (identifier)
+            name: (identifier))
+          (keyword_as)
+          (field
+            name: (identifier)))
+        (semantic_item
+          (keyword_private)
+          name: (object_reference
+            schema: (identifier)
+            name: (identifier))
+          (keyword_as)
+          (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (literal))
+            parameter: (term
+              value: (field
+                name: (identifier))))
+          (keyword_with)
+          (keyword_synonyms)
+          (literal)))
+      (semantic_section
+        (keyword_metrics)
+        (semantic_item
+          name: (object_reference
+            schema: (identifier)
+            name: (identifier))
+          (keyword_as)
+          (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (field
+                (object_reference
+                  name: (identifier))
+                name: (identifier))))))
+      (procedure_comment
+        (keyword_comment)
+        (literal))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (all_fields))))
+    (from
+      (keyword_from)
+      (relation
+        (semantic_view_call
+          (keyword_semantic_view)
+          (object_reference
+            name: (identifier))
+          (keyword_metrics)
+          (semantic_call_item
+            (object_reference
+              schema: (identifier)
+              name: (identifier)))
+          (keyword_dimensions)
+          (semantic_call_item
+            (object_reference
+              schema: (identifier)
+              name: (identifier)))
+          (semantic_call_item
+            (object_reference
+              schema: (identifier)
+              name: (identifier))
+            (keyword_as)
+            alias: (identifier))
+          (keyword_where)
+          (binary_expression
+            left: (field
+              (object_reference
+                name: (identifier))
+              name: (identifier))
+            right: (literal)))))))
+
+================================================================================
+Iceberg and external table alters, DMF expectations, pipe operator, EXPLAIN USING, MERGE BY NAME
+================================================================================
+
+CREATE ICEBERG TABLE it2 CLONE it1 AT (TIMESTAMP => '2026-10-16 09:00:00'::TIMESTAMP_LTZ) COPY GRANTS;
+ALTER ICEBERG TABLE it1 CONVERT TO MANAGED BASE_LOCATION = 'rel/path';
+ALTER ICEBERG TABLE it1 UPGRADE TO ICEBERG VERSION 3;
+ALTER ICEBERG TABLE it1 OPTIMIZE (REMOVE_POSITION_DELETES);
+ALTER ICEBERG TABLE it1 ADD PARTITION BY (BUCKET(10, c1));
+ALTER ICEBERG TABLE it1 REPLACE PARTITION BY (BUCKET(10, c1)) WITH (BUCKET(20, c1));
+ALTER ICEBERG TABLE it1 REFRESH '/region=us/';
+ALTER ICEBERG TABLE it1 CREATE VERSION_TAG nightly AS OF VERSION 123 RETAIN 48 HOURS;
+ALTER ICEBERG TABLE it1 DROP VERSION_TAG IF EXISTS nightly;
+ALTER EXTERNAL TABLE et1 ADD PARTITION (c1 = '2022-01-24', c2 = 'a') LOCATION '2022/01';
+ALTER EXTERNAL TABLE et1 DROP PARTITION LOCATION '2022/01';
+ALTER TABLE t1 MODIFY DATA METRIC FUNCTION SNOWFLAKE.CORE.REFERENTIAL_INTEGRITY_COUNT ON (k, TABLE(d1.s1.other(k))) ADD EXPECTATION no_orphans (VALUE = 0);
+EXECUTE TASK graph_root USING CONFIG = $${"env": "test"}$$;
+SHOW TERSE TABLES ->> SELECT "name", "bytes" FROM $1 ORDER BY "bytes" DESC;
+EXPLAIN USING JSON SELECT 1;
+UNSET (v1, v2);
+USE d1.s1;
+MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE ALL BY NAME WHEN NOT MATCHED THEN INSERT ALL BY NAME;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier))
+        (at_before
+          (keyword_at)
+          (time_travel_parameter
+            name: (keyword_timestamp)
+            value: (cast
+              (literal)
+              (timestamp_ltz
+                (keyword_timestamp_ltz))))))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_convert)
+      (keyword_to)
+      (keyword_managed)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_upgrade)
+      (keyword_to)
+      (keyword_iceberg)
+      (keyword_version)
+      (literal)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_optimize)
+      (identifier)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_partition)
+      (keyword_by)
+      (invocation
+        (object_reference
+          name: (identifier))
+        parameter: (term
+          value: (literal))
+        parameter: (term
+          value: (field
+            name: (identifier))))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_replace)
+      (keyword_partition)
+      (keyword_by)
+      (invocation
+        (object_reference
+          name: (identifier))
+        parameter: (term
+          value: (literal))
+        parameter: (term
+          value: (field
+            name: (identifier))))
+      (keyword_with)
+      (invocation
+        (object_reference
+          name: (identifier))
+        parameter: (term
+          value: (literal))
+        parameter: (term
+          value: (field
+            name: (identifier))))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_refresh)
+      (literal)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_create)
+      (keyword_version_tag)
+      (identifier)
+      (keyword_as)
+      (identifier)
+      (identifier)
+      (literal)
+      (identifier)
+      (literal)
+      (identifier)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (keyword_version_tag)
+      (keyword_if)
+      (keyword_exists)
+      (identifier)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_partition)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal)
+      (keyword_location)
+      (literal)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (keyword_partition)
+      (keyword_location)
+      (literal)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_modify)
+      (keyword_data)
+      (keyword_metric)
+      (keyword_function)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_on)
+      (identifier)
+      (keyword_table)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (identifier)
+      (keyword_add)
+      (dmf_expectation
+        (keyword_expectation)
+        (identifier)
+        (binary_expression
+          left: (field
+            name: (identifier))
+          right: (literal)))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier))
+        (keyword_using)
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (snowflake_statement
+      (pipe_query
+        (keyword_show)
+        (keyword_terse)
+        (snowflake_show_target)
+        (pipe_operator)
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (literal))
+            (term
+              value: (literal))))
+        (from
+          (keyword_from)
+          (relation
+            (parameter)))
+        (order_by
+          (keyword_order)
+          (keyword_by)
+          (order_target
+            (literal)
+            (direction
+              (keyword_desc)))))))
+  (statement
+    (keyword_explain)
+    (keyword_using)
+    (identifier)
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (literal)))))
+  (statement
+    (snowflake_statement
+      (unset_statement
+        (keyword_unset)
+        (identifier)
+        (identifier))))
+  (statement
+    (snowflake_statement
+      (use_statement
+        (keyword_use)
+        (object_reference
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (keyword_merge)
+    (keyword_into)
+    (object_reference
+      name: (identifier))
+    (keyword_using)
+    (object_reference
+      name: (identifier))
+    (keyword_on)
+    predicate: (binary_expression
+      left: (field
+        (object_reference
+          name: (identifier))
+        name: (identifier))
+      right: (field
+        (object_reference
+          name: (identifier))
+        name: (identifier)))
+    (when_clause
+      (keyword_when)
+      (keyword_matched)
+      (keyword_then)
+      (keyword_update)
+      (keyword_all)
+      (keyword_by)
+      (keyword_name))
+    (when_clause
+      (keyword_when)
+      (keyword_not)
+      (keyword_matched)
+      (keyword_then)
+      (keyword_insert)
+      (keyword_all)
+      (keyword_by)
+      (keyword_name))))
+
+================================================================================
+Structured ALTER actions for in-scope objects
+================================================================================
+
+ALTER TAG tg1 RENAME TO tg2;
+ALTER ALERT al1 SET CONFIG = $${ "on": true }$$;
+ALTER ALERT al1 UNSET CONFIG;
+ALTER ALERT d1.s1.al2 FROM TEMPLATE tpl1 SET TEMPLATE_PARAMS = '{ "x": 1 }';
+ALTER STREAM st1 SET COMMENT = 'changes';
+ALTER TASK tk1 UNSET WAREHOUSE, SCHEDULE;
+ALTER TASK GRAPH g1 COMMIT;
+ALTER EXTERNAL TABLE et1 ADD FILES ('p/a.json.gz', 'p/b.json.gz');
+ALTER EXTERNAL TABLE et1 REMOVE FILES ('p/a.json.gz');
+ALTER EXTERNAL TABLE et1 REFRESH 'p/';
+ALTER PIPE pp1 REFRESH PREFIX = 'd1/' MODIFIED_AFTER = '2024-01-01T00:00:00Z';
+ALTER STAGE sg1 REFRESH SUBPATH = 'data';
+ALTER DYNAMIC TABLE dt1 REFRESH COPY SESSION;
+ALTER DYNAMIC TABLE dt1 UNSET FROZEN WHERE;
+ALTER DYNAMIC TABLE dt1 DROP STORAGE LIFECYCLE POLICY;
+ALTER MATERIALIZED VIEW mv1 SUSPEND RECLUSTER;
+ALTER MATERIALIZED VIEW mv1 SET SECURE;
+ALTER SEMANTIC VIEW sv1 REFRESH MATERIALIZATION m1;
+ALTER SEMANTIC VIEW sv1 DROP MATERIALIZATION m1;
+ALTER SCHEMA sc1 ENABLE MANAGED ACCESS;
+ALTER DATABASE ROLE d1.dr1 SET COMMENT = 'readers';
+ALTER MASKING POLICY mp1 SET BODY -> '***';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (rename_object
+        (keyword_rename)
+        (keyword_to)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_unset)
+      (identifier)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_from)
+      (keyword_template)
+      (identifier)
+      (keyword_set)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_unset)
+      (identifier)
+      (identifier)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_commit)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_files)
+      (literal)
+      (literal)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_remove)
+      (keyword_files)
+      (literal)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh)
+        (literal))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh)
+        name: (identifier)
+        value: (literal)
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh)
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh)
+        (keyword_copy)
+        (keyword_session))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_unset)
+      (keyword_frozen)
+      (keyword_where)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (keyword_storage)
+      (keyword_lifecycle)
+      (keyword_policy)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_suspend)
+      (keyword_recluster)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (keyword_secure)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh)
+        (keyword_materialization)
+        (identifier))))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (keyword_materialization)
+      (identifier)))
+  (statement
+    (alter_schema
+      (keyword_alter)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_enable)
+      (keyword_managed)
+      (keyword_access)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_set)
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (alter_snowflake_object
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      (keyword_body)
+      (literal))))
+
+================================================================================
+EXECUTE TASK, EXECUTE IMMEDIATE FROM, EXECUTE USING POLICY_CONTEXT
+================================================================================
+
+EXECUTE TASK tk1;
+EXECUTE TASK tk1 AWAIT;
+EXECUTE TASK tk1 RETRY LAST;
+EXECUTE TASK tk1 RETRY GRAPH RUN GROUP 'abc-123';
+EXECUTE TASK tk1 USING CONFIG = $${ "env": "test" }$$;
+EXECUTE IMMEDIATE FROM @st/scripts/setup.sql USING (env => 'dev', n => 0);
+EXECUTE USING POLICY_CONTEXT(CURRENT_ROLE => 'PUBLIC') AS SELECT * FROM t1;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier))
+        (keyword_await))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier))
+        (keyword_retry)
+        (keyword_last))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier))
+        (keyword_retry)
+        (keyword_graph)
+        (keyword_run)
+        (keyword_group)
+        (literal))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_task)
+        (object_reference
+          name: (identifier))
+        (keyword_using)
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (keyword_from)
+        (stage_reference)
+        (keyword_using)
+        (named_parameter
+          name: (identifier)
+          value: (literal))
+        (named_parameter
+          name: (identifier)
+          value: (literal)))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_using)
+        (keyword_policy_context)
+        (named_parameter
+          name: (identifier)
+          value: (literal))
+        (keyword_as)
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (all_fields))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier))))))))
+
+================================================================================
+CREATE alert, tag, event/external table, task graph, row access policy
+================================================================================
+
+CREATE OR REPLACE ALERT al1 WAREHOUSE = w1 SCHEDULE = '5 MINUTE' IF (EXISTS (SELECT 1 FROM t WHERE bad)) THEN CALL notify();
+CREATE OR REPLACE ALERT al2 FROM TEMPLATE tpl1 WAREHOUSE = w1 TEMPLATE_PARAMS = '{ "a": 1 }';
+CREATE TAG IF NOT EXISTS tg1 ALLOWED_VALUES 'blue', 'red' PROPAGATE = ON_DEPENDENCY COMMENT = 'colour';
+CREATE EVENT TABLE ev1 CHANGE_TRACKING = TRUE;
+CREATE EXTERNAL TABLE et1 (c1 VARCHAR AS (value:c1::VARCHAR)) PARTITION BY (c1) LOCATION = @s1/logs/ AUTO_REFRESH = FALSE FILE_FORMAT = (TYPE = PARQUET);
+CREATE EXTERNAL TABLE et2 USING TEMPLATE (SELECT ARRAY_AGG(OBJECT_CONSTRUCT(*)) FROM TABLE(INFER_SCHEMA(LOCATION => '@s1', FILE_FORMAT => 'ff1'))) LOCATION = @s1 FILE_FORMAT = ff1;
+CREATE OR ALTER TASK GRAPH g1 SCHEDULE = 'USING CRON 0 * * * * UTC' ROOTS = (t_root) FINALIZER = t_fin TASK_DEFAULTS (WAREHOUSE = w1, LOG_LEVEL = 'INFO');
+CREATE OR REPLACE ROW ACCESS POLICY rap1 AS (region VARCHAR) RETURNS BOOLEAN -> region = 'EU';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)
+      (alert_condition
+        (keyword_if)
+        (exists
+          (keyword_exists)
+          (subquery
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (literal))))
+            (from
+              (keyword_from)
+              (relation
+                (object_reference
+                  name: (identifier))))
+            (where
+              (keyword_where)
+              predicate: (field
+                name: (identifier)))))
+        (keyword_then)
+        (statement
+          (snowflake_statement
+            (call_statement
+              (keyword_call)
+              (invocation
+                (object_reference
+                  name: (identifier)))))))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_from)
+      (keyword_template)
+      (identifier)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (keyword_allowed_values)
+      (literal)
+      (literal)
+      name: (identifier)
+      value: (identifier)
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal
+        (keyword_true))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_as)
+          (parenthesized_expression
+            (cast
+              (variant_access
+                expression: (field
+                  name: (identifier))
+                path: (identifier))
+              (varchar
+                (keyword_varchar))))))
+      (table_partition
+        (keyword_partition)
+        (keyword_by)
+        (field
+          name: (identifier)))
+      name: (identifier)
+      value: (stage_reference)
+      name: (identifier)
+      value: (literal
+        (keyword_false))
+      name: (identifier)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_using)
+      (keyword_template)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (invocation
+                  (object_reference
+                    name: (identifier))
+                  parameter: (term
+                    value: (all_fields))))))))
+      (from
+        (keyword_from)
+        (relation
+          (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (named_parameter
+                  name: (identifier)
+                  value: (literal))
+                parameter: (named_parameter
+                  name: (identifier)
+                  value: (literal)))))))
+      name: (identifier)
+      value: (stage_reference)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (list
+        (identifier))
+      name: (identifier)
+      value: (identifier)
+      (keyword_task_defaults)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (create_policy
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_row)
+      (keyword_access)
+      (keyword_policy)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (keyword_boolean)
+      (binary_expression
+        left: (field
+          name: (identifier))
+        right: (literal)))))
+
+================================================================================
+Generic CREATE, DROP, DESCRIBE and UNDROP of in-scope object types
+================================================================================
+
+CREATE INTERACTIVE TABLE it1 TARGET_LAG = '10 minutes' AS SELECT a FROM t;
+CREATE OR REPLACE SEMANTIC VIEW sv0 TABLES (o AS d1.s1.orders);
+DROP ICEBERG TABLE d1.s1.ice1;
+DROP ALERT IF EXISTS al1;
+DROP TAG tg1;
+DROP DATABASE ROLE d1.dr1;
+DROP EXTERNAL TABLE et1 CASCADE;
+DESC ALERT al1;
+DESCRIBE MASKING POLICY mp1;
+DESC SEMANTIC VIEW sv1;
+UNDROP ICEBERG TABLE ice1;
+UNDROP TAG tg1;
+UNDROP DYNAMIC TABLE dt1;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal)
+      (keyword_as)
+      (statement
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_semantic_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_semantic_view)
+      (object_reference
+        name: (identifier))
+      (semantic_section
+        (keyword_tables)
+        (semantic_table
+          name: (identifier)
+          (keyword_as)
+          (object_reference
+            database: (identifier)
+            schema: (identifier)
+            name: (identifier))))))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_cascade)))
+  (statement
+    (snowflake_statement
+      (describe_statement
+        (keyword_describe)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (describe_statement
+        (keyword_describe)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (describe_statement
+        (keyword_describe)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (undrop_statement
+        (keyword_undrop)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (undrop_statement
+        (keyword_undrop)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (undrop_statement
+        (keyword_undrop)
+        (snowflake_object_type)
+        (object_reference
+          name: (identifier))))))
+
+================================================================================
+SHOW with LIKE, IN, STARTS WITH, LIMIT, ON/TO/OF
+================================================================================
+
+SHOW TAGS;
+SHOW TERSE DYNAMIC TABLES LIKE '%x%' IN SCHEMA d1.s1;
+SHOW TABLES LIKE '%p%' STARTS WITH 'a' LIMIT 2 FROM 'b';
+SHOW GRANTS TO ROLE r1;
+SHOW GRANTS OF ROLE r1;
+SHOW GRANTS ON TABLE t1;
+SHOW FUTURE GRANTS IN SCHEMA d1.s1;
+SHOW COLUMNS IN TABLE t1;
+SHOW PARAMETERS LIKE 'x' IN SESSION;
+SHOW TASKS IN ACCOUNT;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (keyword_show)
+    (snowflake_show_target))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (keyword_terse)
+        (snowflake_show_target)
+        (keyword_like)
+        (literal)
+        (keyword_in)
+        (keyword_schema)
+        (object_reference
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_like)
+        (literal)
+        (keyword_starts)
+        (keyword_with)
+        (literal)
+        (keyword_limit)
+        (literal)
+        (keyword_from)
+        (literal))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_to)
+        (keyword_role)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_of)
+        (keyword_role)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_on)
+        (keyword_table)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_in)
+        (keyword_schema)
+        (object_reference
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_in)
+        (keyword_table)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_like)
+        (literal)
+        (keyword_in)
+        (keyword_session))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_in)
+        (object_reference
+          name: (identifier))))))
+
+================================================================================
+GRANT roles, ownership and caller grants
+================================================================================
+
+GRANT ROLE analyst TO ROLE etl_admin;
+GRANT DATABASE ROLE d1.dr1 TO ROLE r1 WITH GRANT OPTION;
+GRANT DATABASE ROLE dr1 TO DATABASE ROLE dr2;
+GRANT OWNERSHIP ON TABLE d1.s1.t1 TO ROLE r2 COPY CURRENT GRANTS;
+GRANT OWNERSHIP ON ALL TABLES IN SCHEMA d1.s1 TO DATABASE ROLE d1.dr1 REVOKE CURRENT GRANTS;
+GRANT CALLER SELECT ON VIEW v1 TO ROLE owner_role;
+GRANT INHERITED CALLER SELECT, INSERT ON ALL TABLES IN SCHEMA d1.s1 TO ROLE owner_role;
+GRANT ALL INHERITED CALLER PRIVILEGES ON ALL SCHEMAS IN ACCOUNT TO ROLE owner_role;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_role)
+      (identifier)
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_database)
+      (keyword_role)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)
+      (keyword_with)
+      (keyword_grant)
+      (keyword_option)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_database)
+      (keyword_role)
+      (identifier)
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_table)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)
+      (keyword_copy)
+      (keyword_current)
+      (keyword_grants)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_revoke)
+      (keyword_current)
+      (keyword_grants)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_caller)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_inherited)
+      (keyword_caller)
+      (privilege
+        (identifier))
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_all)
+      (keyword_inherited)
+      (keyword_caller)
+      (keyword_privileges)
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_account)
+      (keyword_to)
+      (keyword_role)
+      (identifier))))
+
+================================================================================
+GRANT privileges on data objects
+================================================================================
+
+GRANT USAGE, CREATE TABLE ON SCHEMA d1.s1 TO ROLE r1;
+GRANT APPLY MASKING POLICY ON SCHEMA d1.s1 TO ROLE sec_admin WITH GRANT OPTION;
+GRANT SELECT ON ALL TABLES IN SCHEMA d1.s1 TO DATABASE ROLE d1.dr1;
+GRANT SELECT, INSERT ON FUTURE TABLES IN DATABASE d1 TO ROLE r1;
+GRANT ALL PRIVILEGES ON FUNCTION d1.s1.f1(number) TO ROLE r1;
+GRANT USAGE ON PROCEDURE d1.s1.p1(VARCHAR) TO ROLE r1;
+GRANT SELECT ON ICEBERG TABLE d1.s1.it1 TO ROLE r1;
+GRANT OPERATE ON DYNAMIC TABLE d1.s1.dt1 TO ROLE r1;
+GRANT READ ON STAGE d1.s1.sg1 TO ROLE r1;
+GRANT APPLY ON TAG d1.s1.tg1 TO ROLE r1;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (privilege
+        (identifier)
+        (identifier))
+      (keyword_on)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier)
+        (identifier)
+        (identifier))
+      (keyword_on)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)
+      (keyword_with)
+      (keyword_grant)
+      (keyword_option)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (object_reference
+        (identifier)
+        (identifier))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_future)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_database)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (keyword_all)
+      (keyword_privileges)
+      (keyword_on)
+      (keyword_function)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (number
+            (keyword_number))))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_procedure)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (varchar
+            (keyword_varchar))))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (snowflake_object_type)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_stage)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (snowflake_object_type)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier))))
+
+================================================================================
+REVOKE privileges, roles and caller grants
+================================================================================
+
+REVOKE GRANT OPTION FOR OPERATE ON TASK tk1 FROM ROLE analyst;
+REVOKE SELECT ON VIEW d1.s1.v1 FROM ROLE analyst CASCADE;
+REVOKE ROLE analyst FROM ROLE etl_admin;
+REVOKE GRANT OPTION FOR DATABASE ROLE d1.dr1 FROM ROLE r1 CASCADE;
+REVOKE ALL INHERITED CALLER PRIVILEGES ON ALL VIEWS IN ACCOUNT FROM ROLE owner_role;
+REVOKE CALLER USAGE ON SCHEMA d1.s1 FROM ROLE owner_role;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_grant)
+      (keyword_option)
+      (keyword_for)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_task)
+      (object_reference
+        name: (identifier))
+      (keyword_from)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_view)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_from)
+      (keyword_role)
+      (identifier)
+      (keyword_cascade)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_role)
+      (identifier)
+      (keyword_from)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_grant)
+      (keyword_option)
+      (keyword_for)
+      (keyword_database)
+      (keyword_role)
+      (object_reference
+        (identifier)
+        (identifier))
+      (keyword_from)
+      (keyword_role)
+      (identifier)
+      (keyword_cascade)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_all)
+      (keyword_inherited)
+      (keyword_caller)
+      (keyword_privileges)
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_account)
+      (keyword_from)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (keyword_caller)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_schema)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (keyword_from)
+      (keyword_role)
+      (identifier))))
+
+================================================================================
+CREATE VIEW, DYNAMIC TABLE, STREAM, SCHEMA variants
+================================================================================
+
+CREATE OR ALTER VIEW v2 (one COMMENT 'bar') COMMENT = 'foo' CHANGE_TRACKING = TRUE AS SELECT a FROM t;
+CREATE OR REPLACE VIEW v3 COPY TAGS WITH TAG (a = 'b') AS SELECT 1;
+CREATE OR REPLACE DYNAMIC TABLE dt1 (c1 COMMENT 'x', c2) TARGET_LAG = '1 hour' WAREHOUSE = w1 CLUSTER BY (c1) COPY GRANTS REQUIRE USER FROZEN WHERE (ts < CURRENT_TIMESTAMP()) WITH STORAGE LIFECYCLE POLICY slp1 ON (ts) AS SELECT a, b FROM t;
+CREATE DYNAMIC TABLE dt2 CLONE dt1 AT (OFFSET => -60);
+CREATE OR ALTER STREAM s1 ON TABLE t1 AT (OFFSET => -300) APPEND_ONLY = TRUE;
+CREATE STREAM s2 ON VIEW v1 BEFORE (STATEMENT => 'q');
+CREATE STREAM s3 ON STAGE st1;
+CREATE SCHEMA sc2 CLONE sc1 AT (TIMESTAMP => '2025-04-01 12:00:00'::TIMESTAMP);
+CREATE SCHEMA sc3 WITH MANAGED ACCESS DATA_RETENTION_TIME_IN_DAYS = 5;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (view_columns
+        (view_column
+          name: (identifier)
+          (keyword_comment)
+          (literal)))
+      (procedure_comment
+        (keyword_comment)
+        (literal))
+      (table_option
+        name: (identifier)
+        value: (literal
+          (keyword_true)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (copy_clause
+        (keyword_copy)
+        (keyword_tags))
+      (with_tag_clause
+        (keyword_with)
+        (keyword_tag)
+        (tag_assignment
+          name: (object_reference
+            name: (identifier))
+          value: (literal)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (literal)))))))
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (view_columns
+        (view_column
+          name: (identifier)
+          (keyword_comment)
+          (literal))
+        (view_column
+          name: (identifier)))
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (identifier)
+      (cluster_by
+        (keyword_cluster)
+        (keyword_by)
+        (field
+          name: (identifier)))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))
+      (keyword_require)
+      (keyword_user)
+      (keyword_frozen)
+      (keyword_where)
+      (binary_expression
+        left: (field
+          name: (identifier))
+        right: (invocation
+          (object_reference
+            name: (identifier))))
+      (policy_clause
+        (keyword_with)
+        (keyword_storage)
+        (keyword_lifecycle)
+        (keyword_policy)
+        (object_reference
+          name: (identifier))
+        (keyword_on)
+        (identifier))
+      (keyword_as)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier))))))
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier))
+        (at_before
+          (keyword_at)
+          (time_travel_parameter
+            name: (keyword_offset)
+            value: (literal))))))
+  (statement
+    (create_stream
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (keyword_stream)
+      (object_reference
+        name: (identifier))
+      (keyword_on)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (at_before
+        (keyword_at)
+        (time_travel_parameter
+          name: (keyword_offset)
+          value: (literal)))
+      name: (identifier)
+      value: (literal
+        (keyword_true))))
+  (statement
+    (create_stream
+      (keyword_create)
+      (keyword_stream)
+      (object_reference
+        name: (identifier))
+      (keyword_on)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (at_before
+        (keyword_before)
+        (time_travel_parameter
+          name: (keyword_statement)
+          value: (literal)))))
+  (statement
+    (create_stream
+      (keyword_create)
+      (keyword_stream)
+      (object_reference
+        name: (identifier))
+      (keyword_on)
+      (keyword_stage)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (create_schema
+      (keyword_create)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier))
+        (at_before
+          (keyword_at)
+          (time_travel_parameter
+            name: (keyword_timestamp)
+            value: (cast
+              (literal)
+              (timestamp
+                (keyword_timestamp))))))))
+  (statement
+    (create_schema
+      (keyword_create)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_with)
+      (keyword_managed)
+      (keyword_access)
+      name: (identifier)
+      value: (literal))))

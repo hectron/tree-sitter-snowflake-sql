@@ -1,1 +1,0 @@
-; Disabled: Postgres/MySQL-specific index tests removed for Snowflake parser budget

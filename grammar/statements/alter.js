@@ -1,4 +1,4 @@
-import { paren_list } from "../helpers.js";
+import { comma_list, paren_list } from "../helpers.js";
 
 export default {
 
@@ -6,46 +6,27 @@ export default {
     choice(
       $.alter_table,
       $.alter_view,
-      // $.alter_materialized_view, // removed: Postgres-specific, frees parse table budget
       $.alter_schema,
-      // $.alter_type,   // removed: Postgres-specific, frees parse table budget
-      // $.alter_index,  // removed: Postgres-specific, frees parse table budget
       $.alter_database,
-      $.alter_role,
-      // $.alter_sequence, // removed: Postgres-specific, frees parse table budget
-      // $.alter_policy, // removed: Postgres-specific, frees parse table budget
       // Snowflake
       $.alter_snowflake_named_object,
       $.alter_snowflake_object,
+      $.alter_routine,
     ),
   ),
 
   alter_table: $ => seq(
     $.keyword_alter,
+    optional($.keyword_iceberg),
     $.keyword_table,
     optional($._if_exists),
-    optional($.keyword_only),
     $.object_reference,
-    choice(
+    $._alter_specifications,
+    repeat(
       seq(
-        $._alter_specifications,
-        repeat(
-          seq(
-            ",",
-            $._alter_specifications
-          )
-        )
-      ),
-      seq(
-        choice(
-          $.keyword_enable,
-          $.keyword_disable,
-          seq(optional($.keyword_no), $.keyword_force),
-        ),
-        $.keyword_row,
-        $.keyword_level,
-        $.keyword_security,
-      ),
+        ",",
+        $._alter_specifications
+      )
     ),
   ),
 
@@ -58,29 +39,73 @@ export default {
     $.add_constraint,
     $.drop_constraint,
     $.alter_column,
+    $.modify_column,
     // Bare column action continuation: col DROP NOT NULL (after ALTER COLUMN c1 DROP NOT NULL, ...)
     alias($._bare_alter_column, $.alter_column),
-    $.modify_column,
-    $.change_column,
     $.drop_column,
     // Bare DROP COLUMN continuation: COLUMN IF EXISTS col or bare col (after DROP COLUMN c1, ...)
     alias($._bare_drop_column, $.drop_column),
     $.rename_object,
     $.rename_column,
-    $.set_schema,
-    $.change_ownership,
     // Snowflake: ALTER TABLE t CLUSTER BY (col1, col2)
     $.cluster_by,
     // Snowflake: ALTER TABLE t SET prop = value ...
     seq($.keyword_set, $._snowflake_options),
     // Snowflake: ALTER TABLE t DROP PRIMARY KEY
     seq($.keyword_drop, $._primary_key),
-    // Snowflake: ALTER TABLE t ADD DATA METRIC FUNCTION func ON (col1, col2)
-    seq($.keyword_add, $.keyword_data, $.keyword_metric, $.keyword_function, $.object_reference,
-      $.keyword_on, paren_list($.identifier, true)),
-    // Snowflake: ALTER TABLE t DROP DATA METRIC FUNCTION func ON (col1, col2)
-    seq($.keyword_drop, $.keyword_data, $.keyword_metric, $.keyword_function, $.object_reference,
-      $.keyword_on, paren_list($.identifier, true)),
+    // Snowflake: ALTER TABLE t DROP CLUSTERING KEY
+    seq($.keyword_drop, $.keyword_clustering, $.keyword_key),
+    // Snowflake: ALTER TABLE t ADD SEARCH OPTIMIZATION [ON method(cols), ...]
+    prec.right(seq($.keyword_add, $.keyword_search, $.keyword_optimization,
+      optional(seq($.keyword_on, comma_list($.invocation, true))))),
+    // Snowflake Iceberg: CONVERT TO MANAGED, UPGRADE TO ICEBERG VERSION 3, OPTIMIZE (opts)
+    // CONVERT TO MANAGED [BASE_LOCATION = '..']
+    prec.right(seq($.keyword_convert, $.keyword_to, $.keyword_managed, optional($._snowflake_options))),
+    // UPGRADE TO ICEBERG VERSION n
+    seq($.keyword_upgrade, $.keyword_to, $.keyword_iceberg, $.keyword_version, $.literal),
+    seq($.keyword_optimize, paren_list($.identifier, true)),
+    // Snowflake: REFRESH ['metadata path']
+    seq($.keyword_refresh, optional($.literal)),
+    // Snowflake Iceberg: ADD | DROP | REPLACE PARTITION BY (exprs) [WITH (exprs)]
+    seq(choice($.keyword_add, $.keyword_drop, $.keyword_replace), $.keyword_partition, $.keyword_by, paren_list($._expression, true),
+      optional(seq($.keyword_with, paren_list($._expression, true)))),
+    // Snowflake Iceberg: CREATE | REPLACE | DROP VERSION_TAG [IF [NOT] EXISTS] name [AS OF VERSION n | AS OF TIMESTAMP n] [RETAIN n DAYS|HOURS]
+    seq(choice($.keyword_create, $.keyword_replace, $.keyword_drop, $.keyword_alter), $.keyword_version_tag,
+      optional(choice($._if_exists, $._if_not_exists)), $.identifier,
+      optional(seq($.keyword_as, $.identifier, $.identifier, $.literal)),
+      optional(seq($.identifier, $.literal, $.identifier))),
+    // Snowflake: DROP SEARCH OPTIMIZATION [ON method(cols), ..]
+    prec.right(seq($.keyword_drop, $.keyword_search, $.keyword_optimization,
+      optional(seq($.keyword_on, comma_list($.invocation, true))))),
+    // Snowflake: ALTER TABLE t SWAP WITH other
+    seq($.keyword_swap, $.keyword_with, $.object_reference),
+    // Snowflake: ALTER TABLE t ADD | DROP ROW ACCESS POLICY p [ON (cols)] ; SET JOIN POLICY p ..
+    $._alter_policy_action,
+    // Snowflake: ALTER TABLE t SET TAG a = 'x' / UNSET TAG a / UNSET prop, ..
+    seq($.keyword_set, $.tag_assignments),
+    seq($.keyword_unset, $.tag_names),
+    seq($.keyword_unset, $.identifier),
+    // Snowflake: ALTER TABLE t SUSPEND | RESUME RECLUSTER
+    seq(choice($.keyword_suspend, $.keyword_resume), $.keyword_recluster),
+    // Snowflake: ALTER TABLE t ALTER | MODIFY CONSTRAINT name | PRIMARY KEY .. RELY | NOT ENFORCED ..
+    seq(
+      choice($.keyword_alter, $.keyword_modify),
+      $.keyword_constraint,
+      choice($.identifier, $._primary_key, seq($.keyword_unique, $.ordered_columns)),
+      repeat1($.constraint_property),
+    ),
+    // Snowflake: ALTER TABLE t ALTER (c1 DROP NOT NULL, COLUMN c2 COMMENT 'x', ..)
+    seq(
+      choice($.keyword_alter, $.keyword_modify),
+      paren_list(choice(
+        alias($._bare_alter_column, $.alter_column),
+        seq($.keyword_column, $._bare_alter_column),
+      ), true),
+    ),
+    // Snowflake: ALTER TABLE t RENAME CONSTRAINT a TO b
+    seq($.keyword_rename, $.keyword_constraint, $.identifier, $.keyword_to, $.identifier),
+    // Snowflake: ADD | DROP DATA METRIC FUNCTION func ON (col, col -> expr) [EXPECTATION name (cond)]
+    $._dmf_action,
   ),
 
   // ADD COLUMN — keyword_add is required to prevent ambiguity with drop_column continuations
@@ -91,28 +116,25 @@ export default {
     ),
     optional($._if_not_exists),
     $.column_definition,
-    optional($.column_position),
   ),
 
   // Bare ADD COLUMN continuation: COLUMN col TYPE (after ADD COLUMN c1 TYPE, COLUMN c2 TYPE)
   // Requires COLUMN keyword to disambiguate from other specs
   _bare_add_column: $ => seq(
     $.keyword_column,
+    optional($._if_not_exists),
     $.column_definition,
-    optional($.column_position),
   ),
 
   // Bare column_definition continuation: col TYPE (after ADD COLUMN IF NOT EXISTS c1 TYPE, c2 TYPE)
   // No COLUMN keyword — just a raw column_definition for multi-column ADD without COLUMN on continuations
   _bare_column_def: $ => seq(
     $.column_definition,
-    optional($.column_position),
   ),
 
+  // ADD [CONSTRAINT name] { PRIMARY KEY | UNIQUE | FOREIGN KEY } (cols) ...
   add_constraint: $ => seq(
     $.keyword_add,
-    optional($.keyword_constraint),
-    $.identifier,
     $.constraint,
   ),
 
@@ -151,6 +173,8 @@ export default {
     ),
     // Snowflake: ALTER COLUMN col NOT NULL (bare, without SET/DROP)
     $._not_null,
+    // Snowflake: ALTER COLUMN col COMMENT 'text'
+    seq($.keyword_comment, alias($._literal_string, $.literal)),
     seq(
       optional(
         seq(
@@ -161,73 +185,35 @@ export default {
       $.keyword_type,
       field('type', $._type),
     ),
-    seq(
-      $.keyword_set,
-      choice(
-        seq(
-          $.keyword_statistics,
-          field('statistics', $._integer)
-        ),
-        seq(
-          $.keyword_storage,
-          choice(
-            $.keyword_plain,
-            $.keyword_external,
-            $.keyword_extended,
-            $.keyword_main,
-            $.keyword_default,
-          ),
-        ),
-        seq(
-          $.keyword_compression,
-          field('compression_method', $._identifier)
-        ),
-        seq(
-          paren_list($._key_value_pair, true),
-        ),
-        seq(
-          $.keyword_default,
-          $._expression,
-        ),
-      )
-    ),
+    seq($.keyword_set, $.keyword_default, $._expression),
     seq(
       $.keyword_drop,
       $.keyword_default,
     ),
-  ),
-
-  modify_column: $ => prec.left(seq(
-    $.keyword_modify,
-    optional(
-      $.keyword_column,
-    ),
-    optional($._if_exists),
-    choice(
-      $.column_definition,
-      // Snowflake: MODIFY COLUMN col COMMENT '...' (no type, just constraint)
-      seq(field('name', $._column), repeat1($._column_constraint)),
-    ),
-    optional($.column_position),
-  )),
-
-  change_column: $ => seq(
-    $.keyword_change,
-    optional(
-      $.keyword_column,
-    ),
-    optional($._if_exists),
-    field('old_name', $.identifier),
-    $.column_definition,
-    optional($.column_position),
-  ),
-
-  column_position: $ => choice(
-    $.keyword_first,
+    // Snowflake: SET [WITH] MASKING POLICY p [USING (cols)] [FORCE] | UNSET MASKING POLICY
     seq(
-      $.keyword_after,
-      field('col_name', $.identifier),
+      $.keyword_set,
+      optional($.keyword_with),
+      $.keyword_masking,
+      $.keyword_policy,
+      $.object_reference,
+      optional(seq($.keyword_using, paren_list($.identifier, true))),
+      optional($.keyword_force),
     ),
+    seq($.keyword_unset, $.keyword_masking, $.keyword_policy),
+    // Snowflake: SET | UNSET PROJECTION POLICY, SET TAG, UNSET TAG
+    seq($.keyword_set, $.keyword_projection, $.keyword_policy, $.object_reference),
+    seq($.keyword_unset, $.keyword_projection, $.keyword_policy),
+    seq($.keyword_set, $.tag_assignments),
+    seq($.keyword_unset, $.tag_names),
+  ),
+
+  // Snowflake: MODIFY is a synonym of ALTER (ALTER TABLE t MODIFY COLUMN c DROP NOT NULL)
+  modify_column: $ => seq(
+    $.keyword_modify,
+    optional($.keyword_column),
+    field('name', $.identifier),
+    $._alter_column_action,
   ),
 
   drop_column: $ => prec.left(seq(
@@ -266,280 +252,62 @@ export default {
     $.keyword_view,
     optional($._if_exists),
     $.object_reference,
-    choice(
-      // TODO Postgres allows a single "alter column" to set or drop default
-      $.rename_object,
-      $.rename_column,
-      $.set_schema,
-      $.change_ownership,
-    ),
+    $._alter_view_action,
+    repeat(seq(',', $._alter_view_action)),
   ),
 
-  alter_materialized_view: $ => seq(
-    $.keyword_alter,
-    $.keyword_materialized,
-    $.keyword_view,
-    optional($._if_exists),
+  _dmf_action: $ => seq(
+    choice($.keyword_add, $.keyword_drop, $.keyword_modify),
+    $.keyword_data, $.keyword_metric, $.keyword_function,
     $.object_reference,
-    choice(
-      $.rename_object,
-      $.set_schema,
-      $.change_ownership,
-    ),
+    $.keyword_on,
+    paren_list(choice($.lambda_expression, $.identifier, seq($.keyword_table, '(', $.object_reference, paren_list($.identifier), ')'))),
+    repeat(seq(optional(choice($.keyword_add, $.keyword_drop)), $.dmf_expectation)),
   ),
 
+  // EXPECTATION name (VALUE >= 90)
+  dmf_expectation: $ => seq(
+    $.keyword_expectation,
+    $.identifier,
+    '(', $._expression, ')',
+  ),
+
+  _alter_view_action: $ => choice(
+    $._dmf_action,
+    $.rename_object,
+    $.rename_column,
+    seq(choice($.keyword_set, $.keyword_unset), $.keyword_secure),
+    seq($.keyword_set, $._snowflake_options),
+    seq($.keyword_set, $.tag_assignments),
+    seq($.keyword_unset, $.tag_names),
+    seq($.keyword_unset, $.identifier),
+    $._alter_policy_action,
+  ),
+
+  // ADD | DROP | SET <policy clause>:  ROW ACCESS POLICY p ON (cols), JOIN POLICY p ALLOWED JOIN KEYS (..), ..
+  _alter_policy_action: $ => seq(
+    choice($.keyword_add, $.keyword_drop, $.keyword_set),
+    $.policy_clause,
+  ),
+
+  // ALTER SCHEMA | DATABASE [IF EXISTS] name { RENAME TO new | SET props | UNSET prop }
   alter_schema: $ => seq(
     $.keyword_alter,
     $.keyword_schema,
-    $.identifier,
-    choice(
-      $.keyword_rename,
-      $.keyword_owner,
-    ),
-    $.keyword_to,
-    $.identifier,
+    optional($._if_exists),
+    $.object_reference,
+    $._alter_container_action,
   ),
 
   alter_database: $ => seq(
     $.keyword_alter,
     $.keyword_database,
-    $.identifier,
-    optional($.keyword_with),
-    choice(
-      seq($.rename_object),
-      seq($.change_ownership),
-      seq(
-        $.keyword_reset,
-        choice(
-          $.keyword_all,
-          field("configuration_parameter", $.identifier)
-        ),
-      ),
-      seq(
-        $.keyword_set,
-        choice(
-          seq($.keyword_tablespace, $.identifier),
-            $.set_configuration,
-          ),
-        ),
-      ),
-    ),
-
-  alter_role: $ => prec.left(seq(
-    $.keyword_alter,
-    choice(
-      $.keyword_role,
-      $.keyword_group,
-      $.keyword_user,
-    ),
-    choice($.identifier, $.keyword_all),
-    choice(
-      $.rename_object,
-      seq(optional($.keyword_with),repeat($._role_options)),
-      seq(
-        optional(seq($.keyword_in, $.keyword_database, $.identifier)),
-        choice(
-          seq(
-            $.keyword_set,
-            $.set_configuration,
-          ),
-          seq(
-            $.keyword_reset,
-            choice(
-              $.keyword_all,
-              field("option", $.identifier),
-            )),
-        ),
-      )
-    ),
-  )),
-
-  set_configuration: $ => seq(
-    field("option", $.identifier),
-    choice(
-      seq($.keyword_from, $.keyword_current),
-      seq(
-        choice($.keyword_to, "="),
-        choice(
-          field("parameter", $.identifier),
-          $.literal,
-          $.keyword_default
-        )
-      )
-    ),
-  ),
-
-  alter_index: $ => seq(
-    $.keyword_alter,
-    $.keyword_index,
-    optional($._if_exists),
-    $.identifier,
-    choice(
-      $.rename_object,
-      seq(
-        $.keyword_alter,
-        optional($.keyword_column),
-        alias($._natural_number, $.literal),
-        $.keyword_set,
-        $.keyword_statistics,
-        alias($._natural_number, $.literal),
-      ),
-      seq($.keyword_reset, paren_list($.identifier)),
-      seq(
-        $.keyword_set,
-        choice(
-          seq($.keyword_tablespace, $.identifier),
-          paren_list(seq($.identifier, '=', field("value", $.literal)))
-        ),
-      ),
-    ),
-  ),
-
-  alter_sequence: $ => seq(
-    $.keyword_alter,
-    $.keyword_sequence,
     optional($._if_exists),
     $.object_reference,
-    choice(
-      repeat1(
-        choice(
-          seq($.keyword_as, $._type),
-          seq($.keyword_increment, optional($.keyword_by), $.literal),
-          seq($.keyword_minvalue, choice($.literal, seq($.keyword_no, $.keyword_minvalue))),
-          seq($.keyword_maxvalue, choice($.literal, seq($.keyword_no, $.keyword_maxvalue))),
-          seq($.keyword_start, optional($.keyword_with), field("start", alias($._integer, $.literal))),
-          seq($.keyword_restart, optional($.keyword_with), field("restart", alias($._integer, $.literal))),
-          seq($.keyword_cache, field("cache", alias($._integer, $.literal))),
-          seq(optional($.keyword_no), $.keyword_cycle),
-          seq($.keyword_owned, $.keyword_by, choice($.keyword_none, $.object_reference)),
-        ),
-      ),
-      $.rename_object,
-      $.change_ownership,
-      seq(
-        $.keyword_set,
-        choice(
-          choice($.keyword_logged, $.keyword_unlogged),
-          seq($.keyword_schema, $.identifier)
-        ),
-      ),
-    ),
+    $._alter_container_action,
   ),
 
-  // Postgres row level security
-  alter_policy: $ => prec.right(
-    seq(
-      $.keyword_alter,
-      $.keyword_policy,
-      $.object_reference,
-      $.keyword_on,
-      $.object_reference,
-      choice(
-        $.rename_object,
-        seq(
-          optional(
-            seq(
-              $.keyword_to,
-              choice(
-                $.object_reference,
-                $.keyword_public,
-                $.keyword_current_role,
-                $.keyword_current_user,
-                $.keyword_session_user,
-              ),
-              repeat(
-                seq(
-                  ',',
-                  choice(
-                    $.object_reference,
-                    $.keyword_public,
-                    $.keyword_current_role,
-                    $.keyword_current_user,
-                    $.keyword_session_user,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          optional(
-            seq(
-              $.keyword_using,
-              $.parenthesized_expression,
-            ),
-          ),
-          optional(
-            seq(
-              $.keyword_with,
-              $.keyword_check,
-              $.parenthesized_expression,
-            ),
-          ),
-        ),
-      ),
-    ),
-  ),
-
-  alter_type: $ => seq(
-    $.keyword_alter,
-    $.keyword_type,
-    $.identifier,
-    choice(
-      $.change_ownership,
-      $.set_schema,
-      $.rename_object,
-      seq(
-        $.keyword_rename,
-        $.keyword_attribute,
-        $.identifier,
-        $.keyword_to,
-        $.identifier,
-        optional($._drop_behavior)
-      ),
-      seq(
-        $.keyword_add,
-        $.keyword_value,
-        optional($._if_not_exists),
-          alias($._single_quote_string,$.literal),
-        optional(
-          seq(
-            choice($.keyword_before, $.keyword_after),
-            alias($._single_quote_string,$.literal),
-          )
-        ),
-      ),
-      seq(
-        $.keyword_rename,
-        $.keyword_value,
-        alias($._single_quote_string,$.literal),
-        $.keyword_to,
-        alias($._single_quote_string,$.literal),
-      ),
-      seq(
-        choice(
-          seq(
-            $.keyword_add,
-            $.keyword_attribute,
-            $.identifier,
-            $._type
-          ),
-          seq($.keyword_drop,
-            $.keyword_attribute,
-            optional($._if_exists),
-            $.identifier),
-          seq(
-            $.keyword_alter,
-            $.keyword_attribute,
-            $.identifier,
-            optional(seq($.keyword_set, $.keyword_data)),
-            $.keyword_type,
-            $._type
-          ),
-        ),
-        optional(seq($.keyword_collate, $.identifier)),
-        optional($._drop_behavior)
-      )
-    ),
-  ),
+  _alter_container_action: $ => $._snowflake_alter_actions,
 
   _drop_behavior: $ => choice(
     $.keyword_cascade,
@@ -550,18 +318,6 @@ export default {
     $.keyword_rename,
     $.keyword_to,
     $.object_reference,
-  ),
-
-  set_schema: $ => seq(
-    $.keyword_set,
-    $.keyword_schema,
-    field('schema', $.identifier),
-  ),
-
-  change_ownership: $ => seq(
-    $.keyword_owner,
-    $.keyword_to,
-    $.identifier,
   ),
 
 };

@@ -116,9 +116,10 @@ DROP VIEW my_database.my_schema.my_view;
         database: (identifier)
         schema: (identifier)
         name: (identifier)))))
+
 =============================================================================
 Drop schema
-================================================================================
+=============================================================================
 
 DROP SCHEMA IF EXISTS myschema CASCADE;
 
@@ -138,7 +139,7 @@ DROP SCHEMA IF EXISTS myschema CASCADE;
 Drop Database
 ================================================================================
 
-DROP DATABASE IF EXISTS hollywood WITH FORCE;
+DROP DATABASE IF EXISTS hollywood CASCADE;
 
 --------------------------------------------------------------------------------
 
@@ -150,34 +151,4 @@ DROP DATABASE IF EXISTS hollywood WITH FORCE;
       (keyword_if)
       (keyword_exists)
       (identifier)
-      (keyword_with)
-      (keyword_force))))
-
-================================================================================
-Drop Role
-================================================================================
-
-DROP ROLE hansel;
-DROP GROUP fairy;
-DROP USER rapunzel;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (drop_role
-      (keyword_drop)
-      (keyword_role)
-      (identifier)))
-  (statement
-    (drop_role
-      (keyword_drop)
-      (keyword_group)
-      (identifier)))
-  (statement
-    (drop_role
-      (keyword_drop)
-      (keyword_user)
-      (identifier))))
-
-
+      (keyword_cascade))))

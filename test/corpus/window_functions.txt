@@ -477,7 +477,7 @@ SELECT
         PARTITION BY a,b
         ORDER BY a ASC NULLS FIRST
         ROWS BETWEEN 3 PRECEDING
-        AND 3 FOLLOWING EXCLUDE CURRENT ROW
+        AND 3 FOLLOWING
     )
 FROM
     tab;
@@ -531,10 +531,7 @@ FROM
                 (keyword_and)
                 (frame_definition
                   end: (literal)
-                  (keyword_following))
-                (keyword_exclude)
-                (keyword_current)
-                (keyword_row)))))))
+                  (keyword_following))))))))
     (from
       (keyword_from)
       (relation

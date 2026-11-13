@@ -66,28 +66,6 @@ SELECT * FROM my_table;
           name: (identifier))))))
 
 ================================================================================
-Simple select with ONLY
-================================================================================
-
-SELECT * FROM ONLY my_table;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (all_fields))))
-    (from
-      (keyword_from)
-      (keyword_only)
-      (relation
-        (object_reference
-          name: (identifier))))))
-
-================================================================================
 Table.*
 ================================================================================
 
@@ -1048,108 +1026,6 @@ JOIN my_other_table ON TRUE;
           (keyword_true))))))
 
 ================================================================================
-Joins with hint
-================================================================================
-
-SELECT a.id, b.id
-FROM my_table a
-JOIN my_other_table b FORCE INDEX FOR JOIN (idx_a)
-ON a.id = b.a_id;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))
-        (term
-          value: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))
-        alias: (identifier))
-      (join
-        (keyword_join)
-        (relation
-          (object_reference
-            name: (identifier))
-          alias: (identifier))
-        (index_hint
-          (keyword_force)
-          (keyword_index)
-          (keyword_for)
-          (keyword_join)
-          index_name: (identifier))
-        (keyword_on)
-        predicate: (binary_expression
-          left: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier))
-          right: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))))))
-
-================================================================================
-Ignore index for join
-================================================================================
-
-SELECT 1
-FROM my_table a
-JOIN my_other_table b IGNORE INDEX FOR JOIN (idx_a)
-ON a.id = b.a_id;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (literal))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))
-        alias: (identifier))
-      (join
-        (keyword_join)
-        (relation
-          (object_reference
-            name: (identifier))
-          alias: (identifier))
-        (index_hint
-          (keyword_ignore)
-          (keyword_index)
-          (keyword_for)
-          (keyword_join)
-          index_name: (identifier))
-        (keyword_on)
-        predicate: (binary_expression
-          left: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier))
-          right: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))))))
-
-================================================================================
 Joins with USING
 ================================================================================
 
@@ -1674,7 +1550,7 @@ Order by with extra directives
 SELECT id
 FROM my_table
 WHERE id > 4
-ORDER BY id DESC NULLS LAST, val USING < NULLS FIRST;
+ORDER BY id DESC NULLS LAST, val NULLS FIRST;
 
 --------------------------------------------------------------------------------
 
@@ -1710,71 +1586,8 @@ ORDER BY id DESC NULLS LAST, val USING < NULLS FIRST;
       (order_target
         (field
           name: (identifier))
-        (keyword_using)
         (keyword_nulls)
         (keyword_first)))))
-
-================================================================================
-Index hints
-================================================================================
-
-SELECT id
-FROM my_table FORCE INDEX (long_index_identifier)
-LIMIT 1;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (field
-            name: (identifier)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier)))
-      (index_hint
-        (keyword_force)
-        (keyword_index)
-        index_name: (identifier)))
-    (limit
-      (keyword_limit)
-      (literal))))
-
-================================================================================
-Index hints (use)
-================================================================================
-
-SELECT id
-FROM my_table FORCE INDEX (long_index_identifier)
-LIMIT 1;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (field
-            name: (identifier)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier)))
-      (index_hint
-        (keyword_force)
-        (keyword_index)
-        index_name: (identifier)))
-    (limit
-      (keyword_limit)
-      (literal))))
 
 ================================================================================
 Union
@@ -2121,160 +1934,6 @@ SELECT id || '-' || name FROM my_table;
       (keyword_from)
       (relation
         (object_reference
-          name: (identifier))))))
-
-================================================================================
-Altogether now
-================================================================================
-
-SELECT c._id, c.p_id
-  FROM c_table c
-FORCE INDEX (idx_c_on_s_id_and_p_id_and_c_id)
-JOIN cp_table cp
-  ON cp.c_id = c.id
-  AND cp.s_id = c.s_id
-JOIN my_table FORCE INDEX FOR JOIN (idx_my_table_on_s_id_and_id)
-  ON c.c_id = my_table.id
-  AND c.s_id = my_table.s_id
-WHERE c.s_id = 1239
-  AND c.p_id in (1)
-  AND cp.ch_id = 6
-  AND cp.is_published = TRUE
-ORDER BY my_table.title, my_table.id;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))
-        (term
-          value: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))
-        alias: (identifier))
-      (index_hint
-        (keyword_force)
-        (keyword_index)
-        index_name: (identifier))
-      (join
-        (keyword_join)
-        (relation
-          (object_reference
-            name: (identifier))
-          alias: (identifier))
-        (keyword_on)
-        predicate: (binary_expression
-          left: (binary_expression
-            left: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))
-            right: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier)))
-          operator: (keyword_and)
-          right: (binary_expression
-            left: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))
-            right: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier)))))
-      (join
-        (keyword_join)
-        (relation
-          (object_reference
-            name: (identifier)))
-        (index_hint
-          (keyword_force)
-          (keyword_index)
-          (keyword_for)
-          (keyword_join)
-          index_name: (identifier))
-        (keyword_on)
-        predicate: (binary_expression
-          left: (binary_expression
-            left: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))
-            right: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier)))
-          operator: (keyword_and)
-          right: (binary_expression
-            left: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))
-            right: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))))))
-    (where
-      (keyword_where)
-      predicate: (binary_expression
-        left: (binary_expression
-          left: (binary_expression
-            left: (binary_expression
-              left: (field
-                (object_reference
-                  name: (identifier))
-                name: (identifier))
-              right: (literal))
-            operator: (keyword_and)
-            right: (binary_expression
-              left: (field
-                (object_reference
-                  name: (identifier))
-                name: (identifier))
-              operator: (keyword_in)
-              right: (list
-                (literal))))
-          operator: (keyword_and)
-          right: (binary_expression
-            left: (field
-              (object_reference
-                name: (identifier))
-              name: (identifier))
-            right: (literal)))
-        operator: (keyword_and)
-        right: (binary_expression
-          left: (field
-            (object_reference
-              name: (identifier))
-            name: (identifier))
-          right: (literal
-            (keyword_true)))))
-    (order_by
-      (keyword_order)
-      (keyword_by)
-      (order_target
-        (field
-          (object_reference
-            name: (identifier))
-          name: (identifier)))
-      (order_target
-        (field
-          (object_reference
-            name: (identifier))
           name: (identifier))))))
 
 ================================================================================
@@ -2908,43 +2567,6 @@ parenthesized select
           (literal))))))
 
 ================================================================================
-Select with filtered aggregation
-================================================================================
-
-SELECT
-    count(*) FILTER (WHERE i < 5) AS filtered
-FROM tab
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          (invocation
-            (object_reference
-              (identifier))
-            (term
-              (all_fields))
-            (filter_expression
-              (keyword_filter)
-              (where
-                (keyword_where)
-                (binary_expression
-                  (field
-                    (identifier))
-                  (literal)))))
-          (keyword_as)
-          (identifier))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          (identifier))))))
-
-================================================================================
 SELECT FROM SUBQUERY WITH UNION
 ================================================================================
 
@@ -2994,72 +2616,6 @@ FROM (
               (relation
                 (object_reference
                   (identifier))))))
-        (identifier)))))
-
-================================================================================
-SELECT FROM UNNESTED ARRAY WITH ORDINALITY
-================================================================================
-
-SELECT numbers, n, a
-FROM (
-  VALUES
-    (ARRAY[2, 5]),
-    (ARRAY[7, 8, 9])
-) AS x (numbers)
-CROSS JOIN UNNEST(numbers) WITH ORDINALITY AS t (n, a);
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          (field
-            (identifier)))
-        (term
-          (field
-            (identifier)))
-        (term
-          (field
-            (identifier)))))
-    (from
-      (keyword_from)
-      (relation
-        (values
-          (keyword_values)
-          (list
-            (array
-              (keyword_array)
-              (literal)
-              (literal)))
-          (list
-            (array
-              (keyword_array)
-              (literal)
-              (literal)
-              (literal))))
-        (keyword_as)
-        (identifier)
-        (list
-          (column
-            (identifier))))
-      (cross_join
-        (keyword_cross)
-        (keyword_join)
-        (relation
-          (invocation
-            (object_reference
-              (identifier))
-            (term
-              (field
-                (identifier)))))
-        (keyword_with)
-        (keyword_ordinality)
-        (keyword_as)
-        (identifier)
-        (identifier)
         (identifier)))))
 
 ================================================================================
@@ -3150,52 +2706,10 @@ SELECT * FROM table_name;
           name: (identifier))))))
 
 ================================================================================
-Select from table with backtick-quoted identifier
-================================================================================
-
-SELECT * FROM `table_name`;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (all_fields))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))))))
-
-================================================================================
 Select from table with double-quoted identifier
 ================================================================================
 
 SELECT * FROM "table_name";
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (all_fields))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))))))
-
-================================================================================
-Select from table with identifiers containing hyphens, dots, or other special characters within backticks
-================================================================================
-
-SELECT * FROM `complex-database.schema_name.table_name`;
 
 --------------------------------------------------------------------------------
 

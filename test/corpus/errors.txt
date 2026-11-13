@@ -70,8 +70,8 @@ Function body with a $$ string literal with the same name
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $a$
 begin
   return $a$text$a$;
@@ -81,39 +81,39 @@ $a$
 --------------------------------------------------------------------------------
 
 (program
-  (ERROR
-    (keyword_create)
-    (keyword_or)
-    (keyword_replace)
-    (keyword_function)
-    (object_reference
-      schema: (identifier)
-      name: (identifier))
-    (function_arguments)
-    (keyword_returns)
-    (keyword_trigger)
-    (function_language
-      (keyword_language)
-      (identifier))
-    (keyword_as)
-    (ERROR
-      (dollar_quote)
-      (keyword_begin)
-      (keyword_return)
-      (ERROR
-        (dollar_quote))
-      (field
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        schema: (identifier)
         name: (identifier))
-      (keyword_end))
-    (dollar_quote)))
+      (function_arguments)
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (keyword_begin)
+        (keyword_return)
+        (snowflake_session_variable)
+        (ERROR)
+        (keyword_end)
+        (dollar_quote)))))
 
 ================================================================================
 Function body with a unbalanced $$
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $a$
 begin
   return $b$text$b$;
@@ -134,7 +134,8 @@ $c$;
         name: (identifier))
       (function_arguments)
       (keyword_returns)
-      (keyword_trigger)
+      (varchar
+        (keyword_varchar))
       (function_language
         (keyword_language)
         (identifier))
@@ -143,13 +144,9 @@ $c$;
         (dollar_quote)
         (keyword_begin)
         (keyword_return)
-        (ERROR
-          (UNEXPECTED 'b'))
-        (field
-          name: (identifier))
+        (literal)
         (keyword_end)
-        (ERROR
-          (UNEXPECTED 'c'))
+        (ERROR)
         (MISSING dollar_quote)))))
 
 ================================================================================
@@ -157,8 +154,8 @@ Function body with a tag name contains whitespace
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $a$
 begin
   return $b $text$b $;
@@ -179,7 +176,8 @@ $a$;
         name: (identifier))
       (function_arguments)
       (keyword_returns)
-      (keyword_trigger)
+      (varchar
+        (keyword_varchar))
       (function_language
         (keyword_language)
         (identifier))
@@ -188,13 +186,8 @@ $a$;
         (dollar_quote)
         (keyword_begin)
         (keyword_return)
-        (ERROR
-          (UNEXPECTED 'b')
-          (identifier)
-          (UNEXPECTED 't'))
-        (field
-          name: (identifier))
-        (ERROR
-          (UNEXPECTED ';'))
+        (snowflake_session_variable)
+        (ERROR)
         (keyword_end)
         (dollar_quote)))))
+

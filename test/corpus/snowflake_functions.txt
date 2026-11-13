@@ -1,0 +1,808 @@
+================================================================================
+Python UDF with handler properties and dollar-quoted body
+================================================================================
+
+CREATE OR REPLACE FUNCTION post_to_slack(channel VARCHAR, message VARCHAR)
+  RETURNS VARIANT
+  LANGUAGE PYTHON
+  RUNTIME_VERSION = 3.10
+  HANDLER = 'main'
+  EXTERNAL_ACCESS_INTEGRATIONS = ("SLACK_API")
+  PACKAGES = ('requests')
+  SECRETS = ('cred' = SLACK_TOKEN)
+AS
+$$
+import requests
+def main(channel, message):
+    return 1
+$$;
+
+CREATE OR REPLACE FUNCTION IS_HOLIDAY(c STRING, d DATE)
+RETURNS BOOLEAN
+LANGUAGE JAVA
+RUNTIME_VERSION = '17'
+IMPORTS = ('@STAGE/app.jar')
+HANDLER = 'com.x.Y.z';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar)))
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (keyword_variant)
+      (routine_language
+        (keyword_language)
+        (keyword_python))
+      (routine_property
+        name: (keyword_runtime_version)
+        value: (literal))
+      (routine_property
+        name: (keyword_handler)
+        value: (literal))
+      (routine_property
+        name: (keyword_external_access_integrations)
+        value: (routine_property_list
+          (literal)))
+      (routine_property
+        name: (keyword_packages)
+        value: (routine_property_list
+          (literal)))
+      (routine_property
+        name: (keyword_secrets)
+        value: (routine_property_list
+          (routine_secret
+            (literal)
+            (object_reference
+              name: (identifier)))))
+      (routine_body
+        (keyword_as)
+        (literal))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_string))
+        (function_argument
+          (identifier)
+          (keyword_date)))
+      (keyword_returns)
+      (keyword_boolean)
+      (routine_language
+        (keyword_language)
+        (keyword_java))
+      (routine_property
+        name: (keyword_runtime_version)
+        value: (literal))
+      (routine_property
+        name: (keyword_imports)
+        value: (routine_property_list
+          (literal)))
+      (routine_property
+        name: (keyword_handler)
+        value: (literal)))))
+
+================================================================================
+SQL UDFs with dollar-quoted expression or query bodies
+================================================================================
+
+CREATE OR REPLACE FUNCTION GET_REFUNDED_AMOUNT(p VARCHAR, amount NUMBER)
+RETURNS NUMBER
+AS
+$$
+  CASE
+    WHEN UPPER(p) = 'FULL' THEN amount
+    ELSE 0
+  END
+$$;
+
+CREATE OR REPLACE FUNCTION F2(a NUMBER)
+RETURNS NUMBER
+LANGUAGE SQL
+AS
+$$
+  SELECT MAX(x) FROM t WHERE y = a
+$$;
+
+CREATE OR REPLACE FUNCTION F3(a NUMBER)
+RETURNS TABLE (x NUMBER)
+AS
+$$
+  SELECT x FROM t WHERE y = a
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar)))
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))))
+      (keyword_returns)
+      (number
+        (keyword_number))
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (case
+          (keyword_case)
+          (keyword_when)
+          (binary_expression
+            left: (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (field
+                  name: (identifier))))
+            right: (literal))
+          (keyword_then)
+          (field
+            name: (identifier))
+          (keyword_else)
+          (literal)
+          (keyword_end))
+        (dollar_quote))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))))
+      (keyword_returns)
+      (number
+        (keyword_number))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                value: (invocation
+                  (object_reference
+                    name: (identifier))
+                  parameter: (term
+                    value: (field
+                      name: (identifier)))))))
+          (from
+            (keyword_from)
+            (relation
+              (object_reference
+                name: (identifier))))
+          (where
+            (keyword_where)
+            predicate: (binary_expression
+              left: (field
+                name: (identifier))
+              right: (field
+                name: (identifier)))))
+        (dollar_quote))))
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))))
+      (keyword_returns)
+      (keyword_table)
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))))
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                value: (field
+                  name: (identifier)))))
+          (from
+            (keyword_from)
+            (relation
+              (object_reference
+                name: (identifier))))
+          (where
+            (keyword_where)
+            predicate: (binary_expression
+              left: (field
+                name: (identifier))
+              right: (field
+                name: (identifier)))))
+        (dollar_quote)))))
+
+================================================================================
+ALTER PROCEDURE and FUNCTION with argument types
+================================================================================
+
+ALTER PROCEDURE CHECK_TRIGGER_STATUS_SLA(TIMESTAMP_NTZ) SET TRACE_LEVEL = ALWAYS;
+ALTER PROCEDURE IF EXISTS db.sch.P(VARCHAR, NUMBER) SET LOG_LEVEL = 'INFO', COMMENT = 'x';
+ALTER FUNCTION F() UNSET COMMENT;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_routine
+      (keyword_alter)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (timestamp_ntz
+            (keyword_timestamp_ntz))))
+      (keyword_set)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (alter_routine
+      (keyword_alter)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (varchar
+            (keyword_varchar)))
+        (function_argument
+          (number
+            (keyword_number))))
+      (keyword_set)
+      name: (identifier)
+      value: (literal)
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (alter_routine
+      (keyword_alter)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments)
+      (keyword_unset)
+      (identifier))))
+
+================================================================================
+Python and SQL stored procedures
+================================================================================
+
+CREATE OR REPLACE PROCEDURE PROCESS_ALERT(alert_run_id STRING, message STRING)
+RETURNS STRING
+LANGUAGE PYTHON
+RUNTIME_VERSION = 3.10
+PACKAGES = ('snowflake-snowpark-python')
+HANDLER = 'run'
+EXECUTE AS CALLER
+AS
+$$
+import logging
+
+def run(session, alert_run_id, message):
+    return 'ok'
+$$;
+
+CREATE OR REPLACE PROCEDURE SQL_PROC()
+RETURNS NUMBER
+LANGUAGE SQL
+EXECUTE AS OWNER
+AS
+$$
+BEGIN
+  RETURN 1;
+END;
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_string))
+        (function_argument
+          (identifier)
+          (keyword_string)))
+      (procedure_returns
+        (keyword_returns)
+        (keyword_string))
+      (routine_language
+        (keyword_language)
+        (keyword_python))
+      (routine_property
+        name: (keyword_runtime_version)
+        value: (literal))
+      (routine_property
+        name: (keyword_packages)
+        value: (routine_property_list
+          (literal)))
+      (routine_property
+        name: (keyword_handler)
+        value: (literal))
+      (procedure_execute_as
+        (keyword_execute)
+        (keyword_as)
+        (keyword_caller))
+      (routine_body
+        (keyword_as)
+        (literal))))
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments)
+      (procedure_returns
+        (keyword_returns)
+        (number
+          (keyword_number)))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (procedure_execute_as
+        (keyword_execute)
+        (keyword_as)
+        (keyword_owner))
+      (procedure_body
+        (keyword_as)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (return_statement
+            (keyword_return)
+            value: (literal))
+          (keyword_end))
+        (dollar_quote)))))
+
+================================================================================
+Routine argument defaults as expressions
+================================================================================
+
+CREATE OR REPLACE PROCEDURE P(
+  D DATE DEFAULT CURRENT_DATE,
+  E DATE DEFAULT CURRENT_DATE() - 1,
+  R VARCHAR DEFAULT 'EU',
+  N NUMBER DEFAULT NULL
+)
+RETURNS NUMBER
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  RETURN 1;
+END;
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_date)
+          (keyword_default)
+          (field
+            name: (identifier)))
+        (function_argument
+          (identifier)
+          (keyword_date)
+          (keyword_default)
+          (binary_expression
+            left: (invocation
+              (object_reference
+                name: (identifier)))
+            right: (literal)))
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal))
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))
+          (keyword_default)
+          (literal
+            (keyword_null))))
+      (procedure_returns
+        (keyword_returns)
+        (number
+          (keyword_number)))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (procedure_body
+        (keyword_as)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (return_statement
+            (keyword_return)
+            value: (literal))
+          (keyword_end))
+        (dollar_quote)))))
+
+================================================================================
+Function argument named name; COPY INTO with column list
+================================================================================
+
+CREATE OR REPLACE FUNCTION IS_FEATURE_ACTIVE(name STRING)
+RETURNS BOOLEAN
+AS
+$$
+  name IS NOT NULL
+$$;
+
+COPY INTO TMP_LANDING (A, B, C)
+FROM (SELECT $1, $2, $3 FROM @MY_STAGE)
+FILE_FORMAT = (TYPE = CSV);
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_function
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (keyword_string)))
+      (keyword_returns)
+      (keyword_boolean)
+      (function_body
+        (keyword_as)
+        (dollar_quote)
+        (binary_expression
+          left: (field
+            name: (identifier))
+          operator: (is_not
+            (keyword_is)
+            (keyword_not))
+          right: (literal
+            (keyword_null)))
+        (dollar_quote))))
+  (statement
+    (snowflake_copy_into
+      (keyword_copy)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      (list
+        (column
+          (identifier))
+        (column
+          (identifier))
+        (column
+          (identifier)))
+      (keyword_from)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (parameter))
+          (term
+            value: (parameter))
+          (term
+            value: (parameter))))
+      (from
+        (keyword_from)
+        (relation
+          (stage_reference)))
+      name: (identifier)
+      name: (identifier)
+      value: (identifier))))
+
+================================================================================
+ARRAY and ARRAY(type) in routine signatures
+================================================================================
+
+DROP PROCEDURE IF EXISTS RESET_ALL_STREAMS(ARRAY(VARCHAR));
+DROP PROCEDURE IF EXISTS TRUNCATE_ALL(ARRAY(VARCHAR), NUMBER);
+CREATE OR REPLACE PROCEDURE P(tables ARRAY(VARCHAR), n NUMBER)
+RETURNS NUMBER
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  RETURN 1;
+END;
+$$;
+CREATE TABLE t (a ARRAY, b VARCHAR);
+DROP PROCEDURE IF EXISTS P1(DATE, DATE, NUMBER);
+DROP PROCEDURE IF EXISTS P2(ARRAY, STRING);
+DROP PROCEDURE IF EXISTS P3(ARRAY);
+DROP PROCEDURE IF EXISTS P4(ARRAY(VARCHAR));
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (structured_array_type
+            (keyword_array)
+            element: (varchar
+              (keyword_varchar)))))))
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (structured_array_type
+            (keyword_array)
+            element: (varchar
+              (keyword_varchar))))
+        (function_argument
+          (number
+            (keyword_number))))))
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (structured_array_type
+            (keyword_array)
+            element: (varchar
+              (keyword_varchar))))
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number))))
+      (procedure_returns
+        (keyword_returns)
+        (number
+          (keyword_number)))
+      (function_language
+        (keyword_language)
+        (identifier))
+      (procedure_body
+        (keyword_as)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (return_statement
+            (keyword_return)
+            value: (literal))
+          (keyword_end))
+        (dollar_quote))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (structured_array_type
+            (keyword_array)))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))))))
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (keyword_date))
+        (function_argument
+          (keyword_date))
+        (function_argument
+          (number
+            (keyword_number))))))
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (structured_array_type
+            (keyword_array)))
+        (function_argument
+          (keyword_string)))))
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (structured_array_type
+            (keyword_array))))))
+  (statement
+    (drop_procedure
+      (keyword_drop)
+      (keyword_procedure)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (structured_array_type
+            (keyword_array)
+            element: (varchar
+              (keyword_varchar))))))))
+
+================================================================================
+Procedure with COPY GRANTS before RETURNS
+================================================================================
+
+CREATE OR REPLACE PROCEDURE ADD_DELIVERY_CONFIG(
+  SUBSCRIPTION_ID NUMBER,
+  CONFIG VARIANT
+)
+COPY GRANTS
+RETURNS VARIANT
+LANGUAGE PYTHON
+RUNTIME_VERSION = '3.12'
+PACKAGES = ('snowflake-snowpark-python')
+HANDLER = 'run'
+EXECUTE AS OWNER
+AS
+$$
+def run(session, subscription_id, config):
+    return config
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_procedure
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_procedure)
+      (object_reference
+        name: (identifier))
+      (function_arguments
+        (function_argument
+          (identifier)
+          (number
+            (keyword_number)))
+        (function_argument
+          (identifier)
+          (keyword_variant)))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))
+      (procedure_returns
+        (keyword_returns)
+        (keyword_variant))
+      (routine_language
+        (keyword_language)
+        (keyword_python))
+      (routine_property
+        name: (keyword_runtime_version)
+        value: (literal))
+      (routine_property
+        name: (keyword_packages)
+        value: (routine_property_list
+          (literal)))
+      (routine_property
+        name: (keyword_handler)
+        value: (literal))
+      (procedure_execute_as
+        (keyword_execute)
+        (keyword_as)
+        (keyword_owner))
+      (routine_body
+        (keyword_as)
+        (literal)))))

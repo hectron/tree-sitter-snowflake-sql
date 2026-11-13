@@ -1,0 +1,70 @@
+================================================================================
+Dollar-quoted string as a function argument
+================================================================================
+
+SELECT PARSE_JSON($${ "a": 1 }$$) AS j;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (invocation
+            (object_reference
+              name: (identifier))
+            parameter: (term
+              value: (literal)))
+          (keyword_as)
+          alias: (identifier))))))
+
+================================================================================
+Dollar-quoted string as a SET value
+================================================================================
+
+SET X = $$hello$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (set_statement
+      (keyword_set)
+      (object_reference
+        name: (identifier))
+      (literal))))
+
+================================================================================
+EXECUTE IMMEDIATE dollar-quoted block stays structured
+================================================================================
+
+EXECUTE IMMEDIATE $$
+BEGIN
+  LET x := 1;
+  RETURN x;
+END;
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (keyword_begin)
+          (let_statement
+            (keyword_let)
+            name: (identifier)
+            value: (literal))
+          (return_statement
+            (keyword_return)
+            value: (field
+              name: (identifier)))
+          (keyword_end))
+        (dollar_quote)))))

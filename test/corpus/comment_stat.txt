@@ -1,1 +1,0 @@
-; Disabled: Postgres-specific COMMENT ON tests removed for Snowflake parser budget

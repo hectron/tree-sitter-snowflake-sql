@@ -15,10 +15,11 @@ SET client_encoding = 'UTF8';
       (literal))))
 
 ================================================================================
-Set statement on
+SET multiple session variables
 ================================================================================
 
-SET standard_conforming_strings = on;
+SET (v1, v2) = (10, 'example');
+SET v3 = v1 + 1;
 
 --------------------------------------------------------------------------------
 
@@ -27,40 +28,18 @@ SET standard_conforming_strings = on;
     (set_statement
       (keyword_set)
       (object_reference
-        (identifier))
-      (keyword_on))))
-
-================================================================================
-Set statement off
-================================================================================
-
-SET standard_conforming_strings = off;
-
---------------------------------------------------------------------------------
-
-(program
+        name: (identifier))
+      (object_reference
+        name: (identifier))
+      (literal)
+      (literal)))
   (statement
     (set_statement
       (keyword_set)
       (object_reference
-        (identifier))
-      (keyword_off))))
-
-================================================================================
-Set statement default
-================================================================================
-
-SET standard_conforming_strings TO DEFAULT;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (set_statement
-      (keyword_set)
-      (object_reference
-        (identifier))
-      (keyword_to)
-      (keyword_default))))
-
+        name: (identifier))
+      (binary_expression
+        left: (field
+          name: (identifier))
+        right: (literal)))))
 

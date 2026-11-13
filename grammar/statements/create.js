@@ -9,17 +9,13 @@ export default {
     choice(
       $.create_table,
       $.create_view,
-      // $.create_materialized_view, // removed: Postgres-specific, frees parse table budget
-      // $.create_index, // removed: Postgres/MySQL-specific, Snowflake has no user indexes
       $.create_function,
       $.create_procedure,
-      // $.create_type, // removed: Postgres-specific, frees parse table budget
       $.create_database,
-      $.create_role,
+      $.create_database_role,
+      $.create_policy,
+      $.create_index,
       $.create_sequence,
-      // $.create_extension, // removed: Postgres-specific, frees parse table budget
-      // $.create_trigger,   // removed: Postgres-specific, frees parse table budget
-      // $.create_policy,    // removed: Postgres-specific, frees parse table budget
       // Snowflake
       $.create_snowflake_named_object,
       $.create_pipe,
@@ -28,10 +24,8 @@ export default {
       $.create_dynamic_table,
       $.create_snowflake_object,
       $.create_data_metric_function,
-      prec.left(seq(
-        $.create_schema,
-        repeat($._create_statement),
-      )),
+      $.create_schema,
+      $.create_semantic_view,
     ),
   ),
 
@@ -42,12 +36,15 @@ export default {
   create_table: $ => prec.left(
     seq(
       $.keyword_create,
-      optional($._or_replace),
+      optional(choice($._or_replace, $._or_alter)),
       optional(
         choice(
-          $._temporary,
-          $.keyword_unlogged,
+          seq(optional(choice($.keyword_local, $.keyword_global)), $._temporary),
+          $.keyword_volatile,
           $.keyword_external,
+          $.keyword_iceberg,
+          $.keyword_hybrid,
+          $.keyword_transient,
         )
       ),
       $.keyword_table,
@@ -71,30 +68,103 @@ export default {
             $.create_query,
           ),
         ),
+        // CREATE ICEBERG TABLE t EXTERNAL_VOLUME = .. CATALOG = .. (no column list, no query)
+        repeat1($._table_settings),
+        // CREATE TABLE t (a, b) AS SELECT ...
+        seq(
+          alias($._column_list, $.list),
+          repeat($._table_settings),
+          $.keyword_as,
+          $.create_query,
+        ),
+        // CREATE TABLE ... CLONE source_table [AT | BEFORE (..)]
+        seq($.clone_clause, repeat($._table_settings)),
         // CREATE TABLE ... LIKE other_table (Snowflake clone-structure)
         seq(
           $.keyword_like,
           $.object_reference,
           repeat($._table_settings),
         ),
+        // CREATE TABLE t USING TEMPLATE (SELECT ...)
+        seq(
+          repeat($._table_settings),
+          $.keyword_using,
+          $.keyword_template,
+          wrapped_in_parenthesis($._select_statement),
+        ),
+        // CREATE TABLE t FROM BACKUP SET s IDENTIFIER 'id'
+        seq(
+          $.keyword_from,
+          $.keyword_backup,
+          $.keyword_set,
+          $.object_reference,
+          $.keyword_identifier,
+          $.literal,
+        ),
       ),
     ),
   ),
 
+  // CLONE source [AT | BEFORE (..)] [IGNORE TABLES WITH INSUFFICIENT DATA RETENTION] [IGNORE HYBRID TABLES]
+  clone_clause: $ => prec.left(seq(
+    $.keyword_clone,
+    $.object_reference,
+    optional($.at_before),
+    repeat($.ignore_clause),
+  )),
+
+  ignore_clause: $ => choice(
+    seq($.keyword_ignore, $.keyword_hybrid, $.keyword_tables),
+    seq($.keyword_ignore, $.keyword_tables, $.keyword_with, $.keyword_insufficient, $.keyword_data, $.keyword_retention),
+  ),
+
   _table_settings: $ => choice(
     $.table_partition,
-    $.stored_as,
-    $.storage_location,
-    $.table_sort,
     $.cluster_by,
-    $.row_format,
-    seq(
-      $.keyword_tblproperties,
-      paren_list($.table_option, true),
-    ),
-    seq($.keyword_without, $.keyword_oids),
-    $.storage_parameters,
     $.table_option,
+    $.copy_clause,
+    $.with_tag_clause,
+    $.policy_clause,
+    $.contact_clause,
+  ),
+
+  // COPY GRANTS | COPY TAGS | COPY = (COMMENTS, TAGS, GRANTS)
+  copy_clause: $ => seq(
+    $.keyword_copy,
+    choice(
+      $.keyword_grants,
+      $.keyword_tags,
+      seq('=', paren_list($.identifier, true)),
+    ),
+  ),
+
+  // [WITH] ROW ACCESS | AGGREGATION | JOIN | STORAGE LIFECYCLE POLICY name [ON (cols)] [ENTITY KEY (cols)] [ALLOWED JOIN KEYS (cols)]
+  policy_clause: $ => prec.left(seq(
+    optional($.keyword_with),
+    choice(
+      seq($.keyword_row, $.keyword_access),
+      $.keyword_aggregation,
+      $.keyword_join,
+      seq($.keyword_storage, $.keyword_lifecycle),
+    ),
+    $.keyword_policy,
+    $.object_reference,
+    repeat(choice(
+      seq($.keyword_on, $._policy_columns),
+      seq($.keyword_entity, $.keyword_key, $._policy_columns),
+      seq($.keyword_allowed, $.keyword_join, $.keyword_keys, $._policy_columns),
+    )),
+  )),
+
+  _policy_columns: $ => paren_list($.identifier, true),
+
+  // WITH CONTACT (purpose = contact_name, ..)
+  contact_clause: $ => seq(
+    $.keyword_with,
+    $.keyword_contact,
+    '(',
+    $._snowflake_options,
+    ')',
   ),
 
   // Snowflake: CLUSTER BY (col1, col2, expr)
@@ -104,358 +174,135 @@ export default {
     paren_list($._expression, true),
   ),
 
-  stored_as: $ => seq(
-      $.keyword_stored,
-      $.keyword_as,
-      choice(
-          $.keyword_parquet,
-          $.keyword_csv,
-          $.keyword_sequencefile,
-          $.keyword_textfile,
-          $.keyword_rcfile,
-          $.keyword_orc,
-          $.keyword_avro,
-          $.keyword_jsonfile,
-      ),
-  ),
-
-  storage_parameters: $ => seq(
-    $.keyword_with,
-    paren_list(
-      seq($.identifier, optional(seq('=', choice($.literal, $.array)))),
-      true
-    ),
-  ),
-
-  storage_location: $ => prec.right(
-      seq(
-          $.keyword_location,
-          field('path', alias($._literal_string, $.literal)),
-          optional(
-              seq(
-                  $.keyword_cached,
-                  $.keyword_in,
-                  field('pool', alias($._literal_string, $.literal)),
-                  optional(
-                      choice(
-                          $.keyword_uncached,
-                          seq(
-                              $.keyword_with,
-                              $.keyword_replication,
-                              '=',
-                              field('value', alias($._natural_number, $.literal)),
-                          ),
-                      ),
-                  ),
-              )
-          )
-      ),
-  ),
-
-  row_format: $ => seq(
-      $.keyword_row,
-      $.keyword_format,
-      $.keyword_delimited,
-      optional(
-          seq(
-              $.keyword_fields,
-              $.keyword_terminated,
-              $.keyword_by,
-              field('fields_terminated_char', alias($._literal_string, $.literal)),
-              optional(
-                  seq(
-                      $.keyword_escaped,
-                      $.keyword_by,
-                      field('escaped_char', alias($._literal_string, $.literal)),
-                  )
-              )
-          )
-      ),
-      optional(
-          seq(
-              $.keyword_lines,
-              $.keyword_terminated,
-              $.keyword_by,
-              field('row_terminated_char', alias($._literal_string, $.literal)),
-          )
-      )
-  ),
-
-  table_sort: $ => seq(
-      $.keyword_sort,
-      $.keyword_by,
-      paren_list($.identifier, true),
-  ),
-
+  // Snowflake Iceberg: PARTITION BY (col, MONTH(col), BUCKET(8, col), ...)
   table_partition: $ => seq(
-    choice(
-      // Postgres/MySQL style
-      seq(
-        $.keyword_partition,
-        $.keyword_by,
-        choice(
-          $.keyword_range,
-          $.keyword_hash,
-        )
-      ),
-      // Hive style
-      seq(
-        $.keyword_partitioned,
-        $.keyword_by,
-      ),
-      // Spark SQL
-      $.keyword_partition,
-    ),
-    choice(
-      paren_list($.identifier),// postgres & Impala (CTAS)
-      $.column_definitions, // impala/hive external tables
-      paren_list($._key_value_pair, true), // Spark SQL
-    )
+    $.keyword_partition,
+    $.keyword_by,
+    paren_list($._expression, true),
   ),
 
   table_option: $ => choice(
-    seq($.keyword_default, $.keyword_character, $.keyword_set, $.identifier),
     seq($.keyword_collate, $.identifier),
     field('name', $.keyword_default),
     seq(
-      field('name', choice($.keyword_engine, $.identifier, $._literal_string)),
+      field('name', choice($.identifier, $._literal_string)),
       '=',
-      field('value', choice($.identifier, $._literal_string)),
+      field('value', $._property_value),
     ),
   ),
 
-  create_query: $ => $._dml_read,
+  create_query: $ => choice(
+    $._dml_read,
+    // AS ( WITH cte AS (...) SELECT ... )
+    wrapped_in_parenthesis(seq($._cte, choice($._select_statement, $.set_operation))),
+  ),
+
+  // Snowflake: CREATE VIEW v (col [COMMENT '..'], ...)
+  view_columns: $ => paren_list($.view_column, true),
+
+  view_column: $ => seq(
+    field('name', $.identifier),
+    optional($._column_comment),
+  ),
 
   create_view: $ => prec.right(
     seq(
       $.keyword_create,
-      optional($._or_replace),
+      optional(choice($._or_replace, $._or_alter)),
+      optional($.keyword_secure),
       optional($._temporary),
       optional($.keyword_recursive),
+      optional(choice($.keyword_materialized, seq($.keyword_interactive, $.keyword_materialized))),
       $.keyword_view,
       optional($._if_not_exists),
       $.object_reference,
-      optional(paren_list($.identifier)),
+      optional($.view_columns),
+      // Snowflake: COPY GRANTS, COMMENT = '...', CLUSTER BY (..) (materialized views)
+      repeat(choice(
+        $.procedure_comment,
+        $._table_settings,
+        seq(
+          $.keyword_with, $.keyword_data, $.keyword_metric, $.keyword_function,
+          '(', $.object_reference, $.keyword_on, paren_list(choice($.lambda_expression, $.identifier)),
+          repeat($.dmf_expectation), ')',
+        ),
+      )),
       $.keyword_as,
       $.create_query,
-      optional(
-        seq(
-          $.keyword_with,
-          optional(
-            choice(
-              $.keyword_local,
-              $.keyword_cascaded,
-            )
-          ),
-          $._check_option,
-        ),
-      ),
-    ),
-  ),
-
-  create_materialized_view: $ => prec.right(
-    seq(
-      $.keyword_create,
-      optional($._or_replace),
-      $.keyword_materialized,
-      $.keyword_view,
-      optional($._if_not_exists),
-      $.object_reference,
-      $.keyword_as,
-      $.create_query,
-      optional(
-        choice(
-          seq(
-            $.keyword_with,
-            $.keyword_data,
-          ),
-          seq(
-            $.keyword_with,
-            $.keyword_no,
-            $.keyword_data,
-          )
-        )
-      )
-    ),
-  ),
-
-  _operator_class: $ => seq(
-    field("opclass", $.identifier),
-    optional(
-      field("opclass_parameters", wrapped_in_parenthesis(comma_list($.term)))
-    )
-  ),
-
-  composite_field: $ => seq(
-    wrapped_in_parenthesis(
-      comma_list(
-        alias($._index_field, $.field),
-        true,
-      ),
-    ),
-    optional($.keyword_hash),
-  ),
-
-  _index_field: $ => seq(
-    choice(
-      field("expression", wrapped_in_parenthesis($._expression)),
-      field("function", $.invocation),
-      field("column", $._column),
-    ),
-    optional(seq($.keyword_collate, $.identifier)),
-    optional($._operator_class),
-    optional(choice($.keyword_hash, $.direction)),
-    optional(
-      seq(
-        $.keyword_nulls,
-        choice(
-          $.keyword_first,
-          $.keyword_last
-        )
-      )
-    ),
-  ),
-
-  index_fields: $ => wrapped_in_parenthesis(
-    comma_list(
-      choice(
-        $.composite_field,
-        alias($._index_field, $.field),
-      ),
-      true,
-    ),
-  ),
-  tablespace: $ => seq($.keyword_tablespace, $.identifier),
-  tablet_split: $ => seq($.keyword_split, $.keyword_into, $._natural_number, $.keyword_tablets),
-
-  covering_columns: $ => seq(
-    $.keyword_include,
-    $.index_fields,
-  ),
-
-  create_index: $ => seq(
-    $.keyword_create,
-    optional($.keyword_unique),
-    $.keyword_index,
-    optional($.keyword_concurrently),
-    optional(
-      seq(
-        optional($._if_not_exists),
-        field("column", $._column),
-      ),
-    ),
-    $.keyword_on,
-    optional($.keyword_only),
-    seq(
-      $.object_reference,
-      optional(
-        seq(
-          $.keyword_using,
-          choice(
-            $.keyword_btree,
-            $.keyword_hash,
-            $.keyword_gist,
-            $.keyword_spgist,
-            $.keyword_gin,
-            $.keyword_brin
-          ),
-        ),
-      ),
-      $.index_fields
-    ),
-    optional($.covering_columns),
-    optional($.tablespace),
-    optional($.tablet_split),
-    optional(
-      $.where,
     ),
   ),
 
   ...create_function_rules,
   ...create_procedure_rules,
 
+  // Snowflake: CREATE [OR REPLACE] [TRANSIENT] SCHEMA | DATABASE [IF NOT EXISTS] name
+  //            [CLONE source] [properties]
   create_schema: $ => prec.left(seq(
     $.keyword_create,
+    optional(choice($._or_replace, $._or_alter)),
+    optional($.keyword_transient),
     $.keyword_schema,
-    choice(
-      seq(
-        optional($._if_not_exists),
-        $.identifier,
-        optional(seq($.keyword_authorization, $.identifier)),
-      ),
-      seq(
-        $.keyword_authorization,
-        $.identifier,
-      ),
-    ),
+    optional($._if_not_exists),
+    $.object_reference,
+    optional($.clone_clause),
+    optional(seq(optional($.keyword_with), $.keyword_managed, $.keyword_access)),
+    optional($._snowflake_options),
   )),
-
-  _with_settings: $ => seq(
-        field('name', $.identifier),
-        optional('='),
-        field('value', choice($.identifier, alias($._single_quote_string, $.literal))),
-  ),
 
   create_database: $ => prec.left(seq(
     $.keyword_create,
+    optional(choice($._or_replace, $._or_alter)),
+    optional($.keyword_transient),
     $.keyword_database,
     optional($._if_not_exists),
-    $.identifier,
-    optional($.keyword_with),
-    repeat(
-      $._with_settings
-    ),
+    $.object_reference,
+    optional($.clone_clause),
+    optional($._snowflake_options),
   )),
 
-  create_role: $ => prec.left(seq(
+  // Snowflake hybrid tables: CREATE [OR REPLACE] INDEX [IF NOT EXISTS] name ON table (cols) [INCLUDE (cols)]
+  create_index: $ => seq(
     $.keyword_create,
-    choice(
-      $.keyword_user,
-      $.keyword_role,
-      $.keyword_group,
-    ),
-    $.identifier,
-    optional($.keyword_with),
-    repeat(
-      choice(
-        $._user_access_role_config,
-        $._role_options,
-      ),
-    ),
+    optional($._or_replace),
+    $.keyword_index,
+    optional($._if_not_exists),
+    $.object_reference,
+    $.keyword_on,
+    $.object_reference,
+    $.ordered_columns,
+    optional(seq($.keyword_include, $.ordered_columns)),
+  ),
+
+  // Snowflake: CREATE [OR REPLACE] { MASKING | ROW ACCESS } POLICY [IF NOT EXISTS] name
+  //            AS (arg type, ..) RETURNS type -> expr [COMMENT = '..'] [EXEMPT_OTHER_POLICIES = bool]
+  create_policy: $ => prec.left(seq(
+    $.keyword_create,
+    optional(choice($._or_replace, $._or_alter)),
+    choice($.keyword_masking, seq($.keyword_row, $.keyword_access)),
+    $.keyword_policy,
+    optional($._if_not_exists),
+    $.object_reference,
+    $.keyword_as,
+    $.function_arguments,
+    $.keyword_returns,
+    $._type,
+    '->',
+    $._expression,
+    optional($._snowflake_options),
   )),
 
-  _role_options: $ => choice(
-    field("option", $.identifier),
-    seq(
-      $.keyword_valid,
-      $.keyword_until,
-      field("valid_until", alias($._literal_string, $.literal))
-    ),
-    seq(
-      $.keyword_connection,
-      $.keyword_limit,
-      field("connection_limit", alias($._integer, $.literal))
-    ),
-    seq(
-      optional($.keyword_encrypted),
-      $.keyword_password,
-      choice(
-        field("password", alias($._literal_string, $.literal)),
-        $.keyword_null,
-      ),
-    ),
-  ),
+  // Snowflake: CREATE [OR REPLACE] DATABASE ROLE [IF NOT EXISTS] name [COMMENT = ..]
+  create_database_role: $ => prec.left(seq(
+    $.keyword_create,
+    optional($._or_replace),
+    $.keyword_database, $.keyword_role,
+    optional($._if_not_exists),
+    $.object_reference,
+    optional($._snowflake_options),
+  )),
 
-  _user_access_role_config: $ => seq(
-    choice(
-      seq(optional($.keyword_in), $.keyword_role),
-      seq($.keyword_in, $.keyword_group),
-      $.keyword_admin,
-      $.keyword_user,
-    ),
-    comma_list($.identifier, true),
-  ),
-
+  // Snowflake: CREATE [OR REPLACE] SEQUENCE [IF NOT EXISTS] name
+  //            [START [WITH] [=] n] [INCREMENT [BY] [=] n] [ORDER | NOORDER] [COMMENT = '..']
   create_sequence: $ => seq(
     $.keyword_create,
     optional($._or_replace),
@@ -466,190 +313,10 @@ export default {
       choice(
         seq($.keyword_increment, optional(choice($.keyword_by, '=')), field("increment", alias($._integer, $.literal))),
         seq($.keyword_start, optional(choice($.keyword_with, '=')), field("start", alias($._integer, $.literal))),
-        seq($.keyword_cache, field("cache", alias($._integer, $.literal))),
-        seq($.keyword_order),
-        seq($.keyword_no, $.keyword_order),
+        $.keyword_order,
+        $.keyword_noorder,
         $.table_option,
       )
-    ),
-  ),
-
-  create_extension: $ => prec.left(seq(
-    $.keyword_create,
-    $.keyword_extension,
-    optional($._if_not_exists),
-    $.identifier,
-    optional($.keyword_with),
-    optional(seq($.keyword_schema, $.identifier)),
-    optional(seq($.keyword_version, choice($.identifier, alias($._literal_string, $.literal)))),
-    optional($.keyword_cascade),
-  )),
-
-  create_trigger: $ => seq(
-    $.keyword_create,
-    optional($._or_replace),
-    // mariadb
-    optional(seq($.keyword_definer, '=', $.identifier)),
-    optional($.keyword_constraint),
-    // sqlite
-    optional($._temporary),
-    $.keyword_trigger,
-    // sqlite/mariadb
-    optional($._if_not_exists),
-    $.object_reference,
-    choice(
-      $.keyword_before,
-      $.keyword_after,
-      seq($.keyword_instead, $.keyword_of),
-    ),
-    $._create_trigger_event,
-    repeat(seq($.keyword_or, $._create_trigger_event)),
-    $.keyword_on,
-    $.object_reference,
-    repeat(
-      choice(
-        seq($.keyword_from, $.object_reference),
-        choice(
-          seq($.keyword_not, $.keyword_deferrable),
-          $.keyword_deferrable,
-          seq($.keyword_initially, $.keyword_immediate),
-          seq($.keyword_initially, $.keyword_deferred),
-        ),
-        seq($.keyword_referencing, choice($.keyword_old, $.keyword_new), $.keyword_table, optional($.keyword_as), $.identifier),
-        seq(
-          $.keyword_for,
-          optional($.keyword_each),
-          choice($.keyword_row, $.keyword_statement),
-          // mariadb
-          optional(seq(choice($.keyword_follows, $.keyword_precedes), $.identifier)),
-        ),
-        seq($.keyword_when, wrapped_in_parenthesis($._expression)),
-      ),
-    ),
-    $.keyword_execute,
-    choice($.keyword_function, $.keyword_procedure),
-    $.object_reference,
-    paren_list(field('parameter', $.term)),
-  ),
-
-  _create_trigger_event: $ => choice(
-    $.keyword_insert,
-    seq(
-      $.keyword_update,
-      optional(
-        seq(
-          $.keyword_of,
-          comma_list($.identifier, true),
-        ),
-      ),
-    ),
-    $.keyword_delete,
-    $.keyword_truncate,
-  ),
-
-  create_type: $ => prec.left(seq(
-    $.keyword_create,
-    $.keyword_type,
-    $.object_reference,
-    optional(
-      seq(
-        choice(
-          seq(
-            $.keyword_as,
-            $.column_definitions,
-            optional(seq($.keyword_collate, $.identifier))
-          ),
-          seq(
-            $.keyword_as,
-            $.keyword_enum,
-            $.enum_elements,
-          ),
-          seq(
-            optional(
-              seq(
-                $.keyword_as,
-                $.keyword_range,
-              )
-            ),
-            paren_list(
-              $._with_settings
-            ),
-          ),
-        ),
-      ),
-    ),
-  )),
-
-  enum_elements: $ => seq(
-    paren_list(field("enum_element", alias($._literal_string, $.literal))),
-  ),
-
-  // Postgres row level security
-  create_policy: $ => prec.right(
-    seq(
-      $.keyword_create,
-      $.keyword_policy,
-      $.object_reference,
-      $.keyword_on,
-      $.object_reference,
-      optional(
-        seq(
-          $.keyword_as,
-          choice(
-            $.keyword_permissive,
-            $.keyword_restrictive,
-          ),
-        ),
-      ),
-      optional(
-        seq(
-          $.keyword_for,
-          choice(
-            $.keyword_all,
-            $.keyword_select,
-            $.keyword_insert,
-            $.keyword_update,
-            $.keyword_delete,
-          ),
-        ),
-      ),
-      optional(
-        seq(
-          $.keyword_to,
-          choice(
-            $.object_reference,
-            $.keyword_public,
-            $.keyword_current_role,
-            $.keyword_current_user,
-            $.keyword_session_user,
-          ),
-          repeat(
-            seq(
-              ',',
-              choice(
-                $.object_reference,
-                $.keyword_public,
-                $.keyword_current_role,
-                $.keyword_current_user,
-                $.keyword_session_user,
-              ),
-            ),
-          ),
-        ),
-      ),
-      optional(
-        seq(
-          $.keyword_using,
-          $.parenthesized_expression,
-        ),
-      ),
-      optional(
-        seq(
-          $.keyword_with,
-          $.keyword_check,
-          $.parenthesized_expression,
-        ),
-      ),
     ),
   ),
 

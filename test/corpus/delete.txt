@@ -35,75 +35,6 @@ DELETE FROM my_database.my_schema.my_table;
         name: (identifier)))))
 
 ================================================================================
-Delete whole table and only the whole table
-================================================================================
-
-DELETE FROM ONLY my_table;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (delete
-      (keyword_delete))
-    (from
-      (keyword_from)
-      (keyword_only)
-      (object_reference
-        name: (identifier)))))
-
-================================================================================
-Delete table with limit
-================================================================================
-
-DELETE FROM my_table
-LIMIT 4;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (delete
-      (keyword_delete))
-    (from
-      (keyword_from)
-      (object_reference
-        name: (identifier))
-      (limit
-        (keyword_limit)
-        (literal)))))
-
-================================================================================
-Delete table with order by
-================================================================================
-
-DELETE FROM my_table
-ORDER BY id DESC
-LIMIT 4;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (delete
-      (keyword_delete))
-    (from
-      (keyword_from)
-      (object_reference
-        name: (identifier))
-      (order_by
-        (keyword_order)
-        (keyword_by)
-        (order_target
-          (field
-            name: (identifier))
-          (direction
-            (keyword_desc))))
-      (limit
-        (keyword_limit)
-        (literal)))))
-
-================================================================================
 Delete table with where
 ================================================================================
 
@@ -131,7 +62,7 @@ WHERE id = 9;
 Truncate table
 ================================================================================
 
-TRUNCATE TABLE employees CASCADE;
+TRUNCATE TABLE IF EXISTS employees;
 
 --------------------------------------------------------------------------------
 
@@ -139,6 +70,7 @@ TRUNCATE TABLE employees CASCADE;
   (statement
     (keyword_truncate)
     (keyword_table)
+    (keyword_if)
+    (keyword_exists)
     (object_reference
-      (identifier))
-    (keyword_cascade)))
+      (identifier))))

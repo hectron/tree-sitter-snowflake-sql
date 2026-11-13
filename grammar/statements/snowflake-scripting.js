@@ -107,14 +107,17 @@ export default {
     $.repeat_statement,
     $.case_statement,
     $.return_statement,
+    $.null_statement,
     $.raise_statement,
     $.break_statement,
     $.continue_statement,
+    $.await_statement,
     $.open_statement,
     $.fetch_statement,
     $.close_statement,
     $.snowflake_scripting_block,
     $.scripting_transaction,
+    $.begin_transaction_statement,
     $.commit_statement,
     $.rollback_statement,
     $.async_statement,
@@ -154,15 +157,15 @@ export default {
         seq(
           field('type', $._type),
           optional(choice(
-            seq($.keyword_default, field('value', $._expression)),
-            seq(':=', field('value', $._expression)),
+            seq($.keyword_default, field('value', $._scripting_value)),
+            seq(':=', field('value', $._scripting_value)),
           )),
         ),
         // Without type: LET var {DEFAULT | :=} expr (init required)
         seq(
           choice(
-            seq($.keyword_default, field('value', $._expression)),
-            seq(':=', field('value', $._expression)),
+            seq($.keyword_default, field('value', $._scripting_value)),
+            seq(':=', field('value', $._scripting_value)),
           ),
         ),
       ),
@@ -177,8 +180,17 @@ export default {
     optional($.keyword_set),
     field('name', $.identifier),
     ':=',
-    field('value', $._expression),
+    field('value', $._scripting_value),
   )),
+
+  // A value in LET / assignment: an expression, or the result of a
+  // parenthesized EXECUTE IMMEDIATE / CALL: (EXECUTE IMMEDIATE :sql), (CALL proc(...))
+  _scripting_value: $ => choice(
+    $._expression,
+    seq(optional($.keyword_async), '(', choice($.execute_statement, $.call_statement), ')'),
+    // LET rs RESULTSET := ASYNC (SELECT ...)
+    seq($.keyword_async, $.subquery),
+  ),
 
   // =========================================================================
   // IF / ELSEIF / ELSE / END IF
@@ -294,8 +306,8 @@ export default {
   // Searched: CASE WHEN bool THEN stmt; ... [ELSE stmt; ...] END [CASE] ;
   case_statement: $ => seq(
     $.keyword_case,
-    // Simple CASE has parenthesized expression, searched does not
-    optional(seq('(', field('operand', $._expression), ')')),
+    // Simple CASE has an operand expression (parentheses optional); searched does not
+    optional(field('operand', $._expression)),
     repeat1($.case_statement_when_clause),
     optional($.case_statement_else_clause),
     $.keyword_end,
@@ -317,6 +329,12 @@ export default {
   // =========================================================================
   // BREAK / EXIT [label]
   // =========================================================================
+  // AWAIT ALL | AWAIT resultset_name
+  await_statement: $ => seq($.keyword_await, choice($.keyword_all, $.identifier)),
+
+  // NULL; (no-op)
+  null_statement: $ => $.keyword_null,
+
   break_statement: $ => seq(
     choice($.keyword_break, $.keyword_exit),
     optional(field('label', $.identifier)),

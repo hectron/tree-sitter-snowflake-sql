@@ -516,9 +516,7 @@ FROM
     a
 WHERE
         a LIKE '%a'
-    AND a NOT LIKE '%a'
-    AND a SIMILAR TO '%a'
-    AND a NOT SIMILAR TO '%a';
+    AND a NOT LIKE '%a';
 
 
 --------------------------------------------------------------------------------
@@ -539,36 +537,17 @@ WHERE
       (keyword_where)
       predicate: (binary_expression
         left: (binary_expression
-          left: (binary_expression
-            left: (binary_expression
-              left: (field
-                name: (identifier))
-              operator: (keyword_like)
-              right: (literal))
-            operator: (keyword_and)
-            right: (binary_expression
-              left: (field
-                name: (identifier))
-              operator: (not_like
-                (keyword_not)
-                (keyword_like))
-              right: (literal)))
-          operator: (keyword_and)
-          right: (binary_expression
-            left: (field
-              name: (identifier))
-            operator: (similar_to
-              (keyword_similar)
-              (keyword_to))
-            right: (literal)))
+          left: (field
+            name: (identifier))
+          operator: (keyword_like)
+          right: (literal))
         operator: (keyword_and)
         right: (binary_expression
           left: (field
             name: (identifier))
-          operator: (not_similar_to
+          operator: (not_like
             (keyword_not)
-            (keyword_similar)
-            (keyword_to))
+            (keyword_like))
           right: (literal))))))
 
 ================================================================================
@@ -664,56 +643,6 @@ WHERE
         right: (literal)))))
 
 ================================================================================
-string operator concat and start with
-================================================================================
-
-SELECT 'abc' ^@ 'a' || 'z';
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          (binary_expression
-            (binary_expression
-              (literal)
-              (op_other)
-              (literal))
-            (op_other)
-            (literal)))))))
-
-================================================================================
-full text search operators
-================================================================================
-
-SELECT 'fat cats ate rats' @@ !! ('cat' <-> 'rat'::tsquery);
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          (binary_expression
-            (literal)
-            (op_other)
-            (unary_expression
-              (op_unary_other)
-              (parenthesized_expression
-                (cast
-                  (binary_expression
-                    (literal)
-                    (op_other)
-                    (literal))
-                  (object_reference
-                    (identifier)))))))))))
-
-================================================================================
 Array subscript
 ================================================================================
 
@@ -764,22 +693,3 @@ SELECT
               lower: (literal)
               upper: (literal))
             subscript: (literal)))))))
-
-================================================================================
-TSQL OBJECT_ID
-================================================================================
-
-SELECT OBJECT_ID (N'dbo.LEVENSHTEIN_DISTANCE', N'FN')
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          (object_id
-            (keyword_object_id)
-            (literal)
-            (literal)))))))

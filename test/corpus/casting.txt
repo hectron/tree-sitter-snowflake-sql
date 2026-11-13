@@ -41,12 +41,12 @@ SELECT CAST(1 AS TEXT) AS fieldname;
           alias: (identifier))))))
 
 ================================================================================
-Postgres shorthand
+Cast shorthand
 ================================================================================
 
 SELECT
   1::TEXT,
-  1::INT4;
+  1::INT;
 
 --------------------------------------------------------------------------------
 
@@ -132,49 +132,3 @@ CAST (100 AS NUMERIC(32)),
           value: (cast
             (literal)
             (double)))))))
-
-================================================================================
-SELECT AS UNSIGNED
-================================================================================
-
-SELECT CAST ("1" AS UNSIGNED INTEGER);
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (cast
-            name: (keyword_cast)
-            parameter: (literal)
-            (keyword_as)
-            (int
-              (keyword_unsigned)
-              (keyword_int))))))))
-
-================================================================================
-Cast intervals
-================================================================================
-
-SELECT '1 day 10 seconds'::INTERVAL, CAST('1 month' AS INTERVAL)
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (cast
-            (literal)
-            (keyword_interval)))
-        (term
-          value: (cast
-            name: (keyword_cast)
-            parameter: (literal)
-            (keyword_as)
-            (keyword_interval)))))))

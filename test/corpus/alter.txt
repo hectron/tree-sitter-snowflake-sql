@@ -81,63 +81,6 @@ ALTER TABLE my_table
           (keyword_null))))))
 
 ================================================================================
-Alter table and add column first
-================================================================================
-
-ALTER TABLE my_table
-  ADD val3 VARCHAR(100) NOT NULL FIRST;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (add_column
-        (keyword_add)
-        (column_definition
-          name: (identifier)
-          type: (varchar
-            (keyword_varchar)
-            size: (literal))
-          (keyword_not)
-          (keyword_null))
-        (column_position
-          (keyword_first))))))
-
-================================================================================
-Alter table and add column after column
-================================================================================
-
-ALTER TABLE my_table
-  ADD val3 VARCHAR(100) NOT NULL AFTER val2;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (add_column
-        (keyword_add)
-        (column_definition
-          name: (identifier)
-          type: (varchar
-            (keyword_varchar)
-            size: (literal))
-          (keyword_not)
-          (keyword_null))
-        (column_position
-          (keyword_after)
-          col_name: (identifier))))))
-
-================================================================================
 Alter table and alter column setting default
 ================================================================================
 
@@ -210,11 +153,11 @@ ALTER TABLE my_table
           size: (literal))))))
 
 ================================================================================
-Alter table and modify column changing type and position
+Alter table and modify column comment
 ================================================================================
 
 ALTER TABLE my_table
-  MODIFY COLUMN IF EXISTS val6 INT UNSIGNED NOT NULL AFTER val3;
+  MODIFY COLUMN val6 COMMENT 'sixth value';
 
 --------------------------------------------------------------------------------
 
@@ -228,48 +171,9 @@ ALTER TABLE my_table
       (modify_column
         (keyword_modify)
         (keyword_column)
-        (keyword_if)
-        (keyword_exists)
-        (column_definition
-          name: (identifier)
-          type: (int
-            (keyword_int)
-            (keyword_unsigned))
-          (keyword_not)
-          (keyword_null))
-        (column_position
-          (keyword_after)
-          col_name: (identifier))))))
-
-================================================================================
-Alter table and change column renaming and changing type
-================================================================================
-
-ALTER TABLE my_table
-  CHANGE COLUMN IF EXISTS val3 val4 INT UNSIGNED NOT NULL;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (change_column
-        (keyword_change)
-        (keyword_column)
-        (keyword_if)
-        (keyword_exists)
-        old_name: (identifier)
-        (column_definition
-          name: (identifier)
-          type: (int
-            (keyword_int)
-            (keyword_unsigned))
-          (keyword_not)
-          (keyword_null))))))
+        name: (identifier)
+        (keyword_comment)
+        (literal)))))
 
 ================================================================================
 Alter table and alter column changing type, eliding column keyword
@@ -406,133 +310,6 @@ ALTER TABLE my_table
           name: (identifier))))))
 
 ================================================================================
-Alter table and set schema
-================================================================================
-
-ALTER TABLE my_table
-  SET SCHEMA new_schema;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (set_schema
-        (keyword_set)
-        (keyword_schema)
-        schema: (identifier)))))
-
-================================================================================
-Postgres: Alter table and enable row level security
-================================================================================
-
-ALTER TABLE my_table
-  ENABLE ROW LEVEL SECURITY;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (keyword_enable)
-      (keyword_row)
-      (keyword_level)
-      (keyword_security))))
-
-================================================================================
-Postgres: Alter table and disable row level security
-================================================================================
-
-ALTER TABLE my_table
-  DISABLE ROW LEVEL SECURITY;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (keyword_disable)
-      (keyword_row)
-      (keyword_level)
-      (keyword_security))))
-
-================================================================================
-Postgres: Alter table and force row level security
-================================================================================
-
-ALTER TABLE my_table
-  FORCE ROW LEVEL SECURITY;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (keyword_force)
-      (keyword_row)
-      (keyword_level)
-      (keyword_security))))
-
-================================================================================
-Postgres: Alter table and no force row level security
-================================================================================
-
-ALTER TABLE my_table
-  NO FORCE ROW LEVEL SECURITY;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (keyword_no)
-      (keyword_force)
-      (keyword_row)
-      (keyword_level)
-      (keyword_security))))
-
-================================================================================
-Alter table and change owner
-================================================================================
-
-ALTER TABLE my_table
-  OWNER TO someone_else;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        name: (identifier))
-      (change_ownership
-        (keyword_owner)
-        (keyword_to)
-        (identifier)))))
-
-================================================================================
 Alter table and multiple
 ================================================================================
 
@@ -577,27 +354,6 @@ ALTER TABLE IF EXISTS my_table
         name: (identifier)))))
 
 ================================================================================
-Alter view and change owner
-================================================================================
-
-ALTER VIEW my_view
-  OWNER TO someone_else;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_view
-      (keyword_alter)
-      (keyword_view)
-      (object_reference
-        name: (identifier))
-      (change_ownership
-        (keyword_owner)
-        (keyword_to)
-        (identifier)))))
-
-================================================================================
 Alter view and rename
 ================================================================================
 
@@ -638,9 +394,9 @@ ALTER TABLE "Role" ADD CONSTRAINT "pkRole" PRIMARY KEY ("roleId");
         name: (identifier))
       (add_constraint
         (keyword_add)
-        (keyword_constraint)
-        (identifier)
         (constraint
+          (keyword_constraint)
+          name: (identifier)
           (keyword_primary)
           (keyword_key)
           (ordered_columns
@@ -656,19 +412,16 @@ ALTER TABLE posts DROP CONSTRAINT posts_user_id_fkey;
 --------------------------------------------------------------------------------
 
 (program
-    (statement
-        (alter_table
-            (keyword_alter)
-            (keyword_table)
-            (object_reference
-                name: (identifier))
-            (drop_constraint
-                (keyword_drop)
-                (keyword_constraint)
-                (identifier))
-        )
-    )
-)
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (drop_constraint
+        (keyword_drop)
+        (keyword_constraint)
+        (identifier)))))
 
 ================================================================================
 Add foreign key constraint
@@ -688,9 +441,9 @@ FOREIGN KEY ("accountId") REFERENCES "Account" ("accountId") ON DELETE CASCADE;
         name: (identifier))
       (add_constraint
         (keyword_add)
-        (keyword_constraint)
-        (identifier)
         (constraint
+          (keyword_constraint)
+          name: (identifier)
           (keyword_foreign)
           (keyword_key)
           (ordered_columns
@@ -759,28 +512,13 @@ ALTER SCHEMA sales RENAME TO mysales;
     (alter_schema
       (keyword_alter)
       (keyword_schema)
-      (identifier)
-      (keyword_rename)
-      (keyword_to)
-      (identifier))))
-
-================================================================================
-Alter schema owner
-================================================================================
-
-ALTER SCHEMA sales OWNER TO CURRENT_USER;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_schema
-      (keyword_alter)
-      (keyword_schema)
-      (identifier)
-      (keyword_owner)
-      (keyword_to)
-      (identifier))))
+      (object_reference
+        (identifier))
+      (rename_object
+        (keyword_rename)
+        (keyword_to)
+        (object_reference
+          (identifier))))))
 
 ================================================================================
 Alter database rename
@@ -795,7 +533,8 @@ ALTER DATABASE hollywood RENAME TO bollywood;
     (alter_database
       (keyword_alter)
       (keyword_database)
-      (identifier)
+      (object_reference
+        (identifier))
       (rename_object
         (keyword_rename)
         (keyword_to)
@@ -806,9 +545,9 @@ ALTER DATABASE hollywood RENAME TO bollywood;
 Alter database set
 ================================================================================
 
-ALTER DATABASE test SET enable_indexscan TO off;
-ALTER DATABASE test SET enable_indexscan TO DEFAULT;
-ALTER DATABASE test SET TABLESPACE fasttablespace;
+ALTER DATABASE test SET DATA_RETENTION_TIME_IN_DAYS = 7;
+ALTER DATABASE IF EXISTS test SET COMMENT = 'test database';
+ALTER DATABASE test UNSET COMMENT;
 
 --------------------------------------------------------------------------------
 
@@ -817,181 +556,30 @@ ALTER DATABASE test SET TABLESPACE fasttablespace;
     (alter_database
       (keyword_alter)
       (keyword_database)
-      (identifier)
+      (object_reference
+        (identifier))
       (keyword_set)
-      (set_configuration
-        (identifier)
-        (keyword_to)
-        (identifier))))
-  (statement
-    (alter_database
-      (keyword_alter)
-      (keyword_database)
       (identifier)
-      (keyword_set)
-      (set_configuration
-        (identifier)
-        (keyword_to)
-        (keyword_default))))
-  (statement
-    (alter_database
-      (keyword_alter)
-      (keyword_database)
-      (identifier)
-      (keyword_set)
-      (keyword_tablespace)
-      (identifier))))
-
-================================================================================
-Alter datbase reset
-================================================================================
-
-ALTER DATABASE test RESET ALL;
-ALTER DATABASE test RESET enable_indexscan;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_database
-      (keyword_alter)
-      (keyword_database)
-      (identifier)
-      (keyword_reset)
-      (keyword_all)))
-  (statement
-    (alter_database
-      (keyword_alter)
-      (keyword_database)
-      (identifier)
-      (keyword_reset)
-      (identifier))))
-
-================================================================================
-Alter datbase change ownership
-================================================================================
-
-ALTER DATABASE test OWNER TO me;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_database
-      (keyword_alter)
-      (keyword_database)
-      (identifier)
-      (change_ownership
-        (keyword_owner)
-        (keyword_to)
-        (identifier)))))
-
-================================================================================
-Alter role rename
-================================================================================
-
-ALTER ROLE rapunzel RENAME TO snow_white;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_role
-      (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (rename_object
-        (keyword_rename)
-        (keyword_to)
-        (object_reference
-          (identifier))))))
-
-================================================================================
-Alter role valid until
-================================================================================
-
-ALTER ROLE chris VALID UNTIL 'May 4 12:00:00 2015 +1';
-ALTER ROLE fred VALID UNTIL 'infinity';
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_role
-      (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (keyword_valid)
-      (keyword_until)
       (literal)))
   (statement
-    (alter_role
+    (alter_database
       (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (keyword_valid)
-      (keyword_until)
-      (literal))))
-
-================================================================================
-Alter role set
-================================================================================
-
-ALTER ROLE fred IN DATABASE devel SET client_min_messages = DEBUG;
-ALTER ROLE worker_bee SET maintenance_work_mem = 100000;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_role
-      (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (keyword_in)
       (keyword_database)
-      (identifier)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        (identifier))
       (keyword_set)
-      (set_configuration
-        (identifier)
-        (identifier))))
+      (keyword_comment)
+      (literal)))
   (statement
-    (alter_role
+    (alter_database
       (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (keyword_set)
-      (set_configuration
-        (identifier)
-        (literal)))))
-
-================================================================================
-Alter role assigns
-================================================================================
-
-ALTER ROLE miriam CREATEROLE CREATEDB;
-ALTER ROLE rapunzel SUPERUSER NOLOGIN CONNECTION LIMIT 69;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_role
-      (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (identifier)
-      (identifier)))
-  (statement
-    (alter_role
-      (keyword_alter)
-      (keyword_role)
-      (identifier)
-      (identifier)
-      (identifier)
-      (keyword_connection)
-      (keyword_limit)
-      (literal))))
+      (keyword_database)
+      (object_reference
+        (identifier))
+      (keyword_unset)
+      (identifier))))
 
 ================================================================================
 Add foreign key constraint
@@ -1013,9 +601,9 @@ ON UPDATE SET DEFAULT;
         (identifier))
       (add_constraint
         (keyword_add)
-        (keyword_constraint)
-        (identifier)
         (constraint
+          (keyword_constraint)
+          (identifier)
           (keyword_foreign)
           (keyword_key)
           (ordered_columns
@@ -1052,9 +640,9 @@ ALTER TABLE table_name
         (identifier))
       (add_constraint
         (keyword_add)
-        (keyword_constraint)
-        (identifier)
         (constraint
+          (keyword_constraint)
+          (identifier)
           (keyword_unique)
           (ordered_columns
             (column
@@ -1063,138 +651,6 @@ ALTER TABLE table_name
               (identifier))
             (column
               (identifier))))))))
-
-
-================================================================================
-Alter Column Set Storage
-================================================================================
-
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STORAGE PLAIN;
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STORAGE EXTERNAL;
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STORAGE EXTENDED;
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STORAGE MAIN;
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STORAGE DEFAULT;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_storage)
-        (keyword_plain))))
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_storage)
-        (keyword_external))))
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_storage)
-        (keyword_extended))))
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_storage)
-        (keyword_main))))
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_storage)
-        (keyword_default)))))
-
-================================================================================
-Alter Column Set Compression
-================================================================================
-
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET COMPRESSION lz4;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_compression)))))
-
-================================================================================
-Alter Column Set Statistics
-================================================================================
-
-ALTER TABLE table_name
-    ALTER COLUMN col1 SET STATISTICS 100;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_table
-      (keyword_alter)
-      (keyword_table)
-      (object_reference
-        (identifier))
-      (alter_column
-        (keyword_alter)
-        (keyword_column)
-        (identifier)
-        (keyword_set)
-        (keyword_statistics)))))
-
 
 ================================================================================
 Snowflake: ADD COLUMN with COLUMN continuation
@@ -1324,4 +780,3 @@ DROP COLUMN IF EXISTS c1, COLUMN IF EXISTS c2;
         (keyword_if)
         (keyword_exists)
         name: (identifier)))))
-

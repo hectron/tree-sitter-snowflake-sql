@@ -1154,8 +1154,9 @@ END;
       (keyword_begin)
       (case_statement
         (keyword_case)
-        (field
-          (identifier))
+        (parenthesized_expression
+          (field
+            (identifier)))
         (case_statement_when_clause
           (keyword_when)
           (literal)
@@ -1250,8 +1251,9 @@ END;
       (keyword_begin)
       (case_statement
         (keyword_case)
-        (field
-          (identifier))
+        (parenthesized_expression
+          (field
+            (identifier)))
         (case_statement_when_clause
           (keyword_when)
           (literal)
@@ -2168,8 +2170,9 @@ END;
             (literal)))
         (case_statement
           (keyword_case)
-          (field
-            (identifier))
+          (parenthesized_expression
+            (field
+              (identifier)))
           (case_statement_when_clause
             (keyword_when)
             (literal)
@@ -2321,13 +2324,16 @@ END;
           (invocation
             (object_reference
               (identifier))
-            (term
-              (binary_expression
-                (field
-                  (identifier))
-                (field
-                  (identifier)))
-              (identifier)))))
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  (all_fields))))
+            (from
+              (keyword_from)
+              (relation
+                (object_reference
+                  (identifier)))))))
       (keyword_begin)
       (return_statement
         (keyword_return)
@@ -2651,3 +2657,447 @@ $$;
             (keyword_for))
           (keyword_end))
         (dollar_quote)))))
+
+================================================================================
+EXECUTE IMMEDIATE with USING binds
+================================================================================
+
+EXECUTE IMMEDIATE :check_query USING (CHECK_DATE);
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (snowflake_variable_reference)
+        (keyword_using)
+        (list
+          (field
+            name: (identifier)))))))
+
+================================================================================
+CALL with INTO variable
+================================================================================
+
+CALL my_proc(
+  'x' -- note
+) INTO :RESULT;
+CALL other_proc(1, 2);
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (call_statement
+        (keyword_call)
+        (invocation
+          (object_reference
+            name: (identifier))
+          parameter: (term
+            value: (literal))
+          (comment))
+        (keyword_into)
+        (snowflake_variable_reference))))
+  (statement
+    (snowflake_statement
+      (call_statement
+        (keyword_call)
+        (invocation
+          (object_reference
+            name: (identifier))
+          parameter: (term
+            value: (literal))
+          parameter: (term
+            value: (literal)))))))
+
+================================================================================
+Scripting: EXECUTE/CALL values, CASE operand, NULL, CALL INTO name
+================================================================================
+
+EXECUTE IMMEDIATE $$
+DECLARE
+  res RESULTSET DEFAULT (SHOW TASKS IN SCHEMA ROOT ONLY);
+  rs2 RESULTSET;
+BEGIN
+  rs1 := (EXECUTE IMMEDIATE :sql);
+  LET r3 RESULTSET := (EXECUTE IMMEDIATE :q USING (a, b));
+  x := (CALL CACHE_RATE(:items, NULL, NULL));
+  CALL RETRY_FAILED('x') INTO out_var;
+  CASE :EBB_KIND
+    WHEN 'A' THEN
+      RETURN 1;
+    WHEN 'B' THEN
+      RETURN 2;
+    ELSE
+      RETURN 3;
+  END CASE;
+  CASE
+    WHEN x > 1 THEN
+      NULL;
+    ELSE
+      RETURN 0;
+  END CASE;
+  EXCEPTION
+    WHEN OTHER THEN NULL;
+END;
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (dollar_quote)
+        (snowflake_scripting_block
+          (declare_section
+            (keyword_declare)
+            (snowflake_declare_variable
+              name: (identifier)
+              type: (keyword_resultset)
+              (keyword_default)
+              default: (subquery
+                (snowflake_show_statement
+                  (keyword_show)
+                  (snowflake_show_target)
+                  (keyword_in)
+                  (keyword_schema)
+                  (keyword_root)
+                  (keyword_only))))
+            (snowflake_declare_variable
+              name: (identifier)
+              type: (keyword_resultset)))
+          (keyword_begin)
+          (assignment_statement
+            name: (identifier)
+            value: (execute_statement
+              (keyword_execute)
+              (keyword_immediate)
+              (snowflake_variable_reference)))
+          (let_statement
+            (keyword_let)
+            name: (identifier)
+            type: (keyword_resultset)
+            value: (execute_statement
+              (keyword_execute)
+              (keyword_immediate)
+              (snowflake_variable_reference)
+              (keyword_using)
+              (list
+                (field
+                  name: (identifier))
+                (field
+                  name: (identifier)))))
+          (assignment_statement
+            name: (identifier)
+            value: (call_statement
+              (keyword_call)
+              (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (term
+                  value: (snowflake_variable_reference))
+                parameter: (term
+                  value: (literal
+                    (keyword_null)))
+                parameter: (term
+                  value: (literal
+                    (keyword_null))))))
+          (statement
+            (snowflake_statement
+              (call_statement
+                (keyword_call)
+                (invocation
+                  (object_reference
+                    name: (identifier))
+                  parameter: (term
+                    value: (literal)))
+                (keyword_into)
+                (identifier))))
+          (case_statement
+            (keyword_case)
+            operand: (snowflake_variable_reference)
+            (case_statement_when_clause
+              (keyword_when)
+              condition: (literal)
+              (keyword_then)
+              (return_statement
+                (keyword_return)
+                value: (literal)))
+            (case_statement_when_clause
+              (keyword_when)
+              condition: (literal)
+              (keyword_then)
+              (return_statement
+                (keyword_return)
+                value: (literal)))
+            (case_statement_else_clause
+              (keyword_else)
+              (return_statement
+                (keyword_return)
+                value: (literal)))
+            (keyword_end)
+            (keyword_case))
+          (case_statement
+            (keyword_case)
+            (case_statement_when_clause
+              (keyword_when)
+              condition: (binary_expression
+                left: (field
+                  name: (identifier))
+                right: (literal))
+              (keyword_then)
+              (null_statement
+                (keyword_null)))
+            (case_statement_else_clause
+              (keyword_else)
+              (return_statement
+                (keyword_return)
+                value: (literal)))
+            (keyword_end)
+            (keyword_case))
+          (exception_clause
+            (keyword_exception)
+            (exception_when_clause
+              (keyword_when)
+              exception: (keyword_other)
+              (keyword_then)
+              (null_statement
+                (keyword_null))))
+          (keyword_end))
+        (dollar_quote)))))
+
+================================================================================
+Standalone BEGIN TRANSACTION in a block; paired transaction
+================================================================================
+
+DECLARE
+  del_count INT;
+BEGIN
+  BEGIN TRANSACTION;
+  DELETE FROM t WHERE id IN ('a', 'b');
+  del_count := SQLROWCOUNT;
+  IF (:del_count != 20) THEN
+    ROLLBACK;
+    RETURN 'ABORTED';
+  END IF;
+  CALL F('c8', 'v', '2025-10-01'::TIMESTAMP_NTZ, 20);
+  RETURN 'Success: deleted ' || :del_count
+    || ' stuck records.';
+END;
+BEGIN
+  BEGIN TRANSACTION;
+  DELETE FROM t WHERE id = 1;
+  COMMIT;
+END;
+
+--------------------------------------------------------------------------------
+
+(program
+  (block
+    (snowflake_scripting_block
+      (declare_section
+        (keyword_declare)
+        (snowflake_declare_variable
+          name: (identifier)
+          type: (int
+            (keyword_int))))
+      (keyword_begin)
+      (begin_transaction_statement
+        (keyword_begin)
+        (keyword_transaction))
+      (statement
+        (delete
+          (keyword_delete))
+        (from
+          (keyword_from)
+          (object_reference
+            name: (identifier))
+          (where
+            (keyword_where)
+            predicate: (binary_expression
+              left: (field
+                name: (identifier))
+              operator: (keyword_in)
+              right: (list
+                (literal)
+                (literal))))))
+      (assignment_statement
+        name: (identifier)
+        value: (field
+          name: (identifier)))
+      (if_statement
+        (keyword_if)
+        condition: (binary_expression
+          left: (snowflake_variable_reference)
+          right: (literal))
+        (keyword_then)
+        (rollback_statement
+          (keyword_rollback))
+        (return_statement
+          (keyword_return)
+          value: (literal))
+        (keyword_end)
+        (keyword_if))
+      (statement
+        (snowflake_statement
+          (call_statement
+            (keyword_call)
+            (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (literal))
+              parameter: (term
+                value: (literal))
+              parameter: (term
+                value: (cast
+                  (literal)
+                  (timestamp_ntz
+                    (keyword_timestamp_ntz))))
+              parameter: (term
+                value: (literal))))))
+      (return_statement
+        (keyword_return)
+        value: (binary_expression
+          left: (binary_expression
+            left: (literal)
+            operator: (op_other)
+            right: (snowflake_variable_reference))
+          operator: (op_other)
+          right: (literal)))
+      (keyword_end)))
+  (block
+    (snowflake_scripting_block
+      (keyword_begin)
+      (scripting_transaction
+        (keyword_begin)
+        (keyword_transaction)
+        (statement
+          (delete
+            (keyword_delete))
+          (from
+            (keyword_from)
+            (object_reference
+              name: (identifier))
+            (where
+              (keyword_where)
+              predicate: (binary_expression
+                left: (field
+                  name: (identifier))
+                right: (literal)))))
+        (keyword_commit))
+      (keyword_end))))
+
+================================================================================
+LET with parenthesized sum of scalar subqueries
+================================================================================
+
+BEGIN
+  LET total INT := ((SELECT COUNT(*) FROM t1) + (SELECT COUNT(*) FROM t2));
+  RETURN total;
+END;
+
+--------------------------------------------------------------------------------
+
+(program
+  (block
+    (snowflake_scripting_block
+      (keyword_begin)
+      (let_statement
+        (keyword_let)
+        name: (identifier)
+        type: (int
+          (keyword_int))
+        value: (parenthesized_expression
+          (binary_expression
+            left: (subquery
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    value: (invocation
+                      (object_reference
+                        name: (identifier))
+                      parameter: (term
+                        value: (all_fields))))))
+              (from
+                (keyword_from)
+                (relation
+                  (object_reference
+                    name: (identifier)))))
+            right: (subquery
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    value: (invocation
+                      (object_reference
+                        name: (identifier))
+                      parameter: (term
+                        value: (all_fields))))))
+              (from
+                (keyword_from)
+                (relation
+                  (object_reference
+                    name: (identifier))))))))
+      (return_statement
+        (keyword_return)
+        value: (field
+          name: (identifier)))
+      (keyword_end))))
+
+================================================================================
+Jinja {{name}} placeholders inside scripting identifiers
+================================================================================
+
+BEGIN
+  LET {{health_check_name}}_count NUMBER := 0;
+  SELECT COUNT(*) INTO :c FROM {{ db_name }}.PUBLIC.{{health_check_name}}_RESULTS;
+  RETURN {{health_check_name}}_count;
+END;
+
+--------------------------------------------------------------------------------
+
+(program
+  (block
+    (snowflake_scripting_block
+      (keyword_begin)
+      (let_statement
+        (keyword_let)
+        name: (identifier)
+        type: (number
+          (keyword_number))
+        value: (literal))
+      (statement
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (term
+                  value: (all_fields))))))
+        (keyword_into)
+        (select_expression
+          (term
+            value: (snowflake_variable_reference)))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              database: (identifier)
+              schema: (identifier)
+              name: (identifier)))))
+      (return_statement
+        (keyword_return)
+        value: (field
+          name: (identifier)))
+      (keyword_end))))

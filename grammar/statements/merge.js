@@ -44,6 +44,8 @@ export default {
         $.keyword_insert,
         $._insert_values
       ),
+      // UPDATE ALL BY NAME | INSERT ALL BY NAME
+      seq(choice($.keyword_update, $.keyword_insert), $.keyword_all, $.keyword_by, $.keyword_name),
       optional($.where)
     )
   )),

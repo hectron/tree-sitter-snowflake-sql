@@ -481,7 +481,8 @@ GRANT SELECT ON TABLE my_table TO ROLE analyst;
   (statement
     (grant_statement
       (keyword_grant)
-      (identifier)
+      (privilege
+        (identifier))
       (keyword_on)
       (keyword_table)
       (object_reference
@@ -516,27 +517,6 @@ GRANT ALL PRIVILEGES ON SCHEMA my_schema TO ROLE admin WITH GRANT OPTION;
       (keyword_option))))
 
 ================================================================================
-Grant on database to user
-================================================================================
-
-GRANT USAGE ON DATABASE my_db TO USER jdoe;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (grant_statement
-      (keyword_grant)
-      (identifier)
-      (keyword_on)
-      (keyword_database)
-      (object_reference
-        name: (identifier))
-      (keyword_to)
-      (keyword_user)
-      (identifier))))
-
-================================================================================
 Revoke privilege
 ================================================================================
 
@@ -548,7 +528,8 @@ REVOKE SELECT ON TABLE my_table FROM ROLE analyst;
   (statement
     (revoke_statement
       (keyword_revoke)
-      (identifier)
+      (privilege
+        (identifier))
       (keyword_on)
       (keyword_table)
       (object_reference
@@ -593,36 +574,10 @@ SHOW stages;
     (snowflake_show_target)))
 
 ================================================================================
-Show warehouses
-================================================================================
-
-SHOW warehouses;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (keyword_show)
-    (snowflake_show_target)))
-
-================================================================================
 Show databases
 ================================================================================
 
 SHOW databases;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (keyword_show)
-    (snowflake_show_target)))
-
-================================================================================
-Show roles
-================================================================================
-
-SHOW roles;
 
 --------------------------------------------------------------------------------
 
@@ -975,59 +930,6 @@ GET @~/folder 'file:///tmp/'
         (literal)))))
 
 ================================================================================
-Alter warehouse set property
-================================================================================
-
-ALTER WAREHOUSE my_wh SET WAREHOUSE_SIZE = 'XLARGE'
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_snowflake_named_object
-      (keyword_alter)
-      (snowflake_alter_object_type)
-      (object_reference
-        name: (identifier))
-      (keyword_set)
-      name: (identifier)
-      value: (literal))))
-
-================================================================================
-Alter warehouse suspend
-================================================================================
-
-ALTER WAREHOUSE my_wh SUSPEND
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_snowflake_named_object
-      (keyword_alter)
-      (snowflake_alter_object_type)
-      (object_reference
-        name: (identifier))
-      (keyword_suspend))))
-
-================================================================================
-Alter warehouse resume
-================================================================================
-
-ALTER WAREHOUSE my_wh RESUME
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (alter_snowflake_named_object
-      (keyword_alter)
-      (snowflake_alter_object_type)
-      (object_reference
-        name: (identifier))
-      (keyword_resume))))
-
-================================================================================
 Alter task resume
 ================================================================================
 
@@ -1082,40 +984,6 @@ CREATE OR REPLACE TAG my_tag
         name: (identifier)))))
 
 ================================================================================
-Create or replace integration
-================================================================================
-
-CREATE OR REPLACE INTEGRATION my_int
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_snowflake_object
-      (keyword_create)
-      (keyword_or)
-      (keyword_replace)
-      (snowflake_object_type)
-      (object_reference
-        name: (identifier)))))
-
-================================================================================
-Drop integration
-================================================================================
-
-DROP INTEGRATION my_integration
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (drop_snowflake_object
-      (keyword_drop)
-      (snowflake_object_type)
-      (object_reference
-        name: (identifier)))))
-
-================================================================================
 Drop tag
 ================================================================================
 
@@ -1130,51 +998,6 @@ DROP TAG my_tag
       (snowflake_object_type)
       (object_reference
         name: (identifier)))))
-
-================================================================================
-Create warehouse
-================================================================================
-
-CREATE WAREHOUSE my_wh
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_snowflake_named_object
-      (keyword_create)
-      (snowflake_create_object_type)
-      (object_reference
-        name: (identifier)))))
-
-================================================================================
-Drop warehouse
-================================================================================
-
-DROP WAREHOUSE my_wh
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (drop_snowflake_named_object
-      (keyword_drop)
-      (snowflake_drop_object_type)
-      (object_reference
-        name: (identifier)))))
-
-================================================================================
-Show users
-================================================================================
-
-SHOW users
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (keyword_show)
-    (snowflake_show_target)))
 
 ================================================================================
 Show schemas
@@ -1364,7 +1187,8 @@ ALTER STAGE my_stage REFRESH;
       (snowflake_alter_object_type)
       (object_reference
         name: (identifier))
-      (keyword_refresh))))
+      (refresh_action
+        (keyword_refresh)))))
 
 ================================================================================
 ALTER STAGE SET with parenthesized property
@@ -1417,3 +1241,2424 @@ SHOW TERSE TASKS ROOT ONLY;
     (snowflake_show_target)
     (keyword_root)
     (keyword_only)))
+
+================================================================================
+CREATE DYNAMIC ICEBERG TABLE with properties and column definitions
+================================================================================
+
+CREATE OR REPLACE DYNAMIC ICEBERG TABLE T1
+  TARGET_LAG = '10 minutes'
+  WAREHOUSE = ${SNOWFLAKE_WAREHOUSE}
+  EXTERNAL_VOLUME = 'vol'
+  CATALOG = 'SNOWFLAKE'
+  BASE_LOCATION = 'a/b'
+  REFRESH_MODE = incremental
+  INITIALIZE = on_schedule
+AS
+SELECT ID, AMOUNT FROM ${DB}.PUBLIC.SRC;
+
+CREATE OR REPLACE DYNAMIC ICEBERG TABLE T2(
+    ID STRING COMMENT 'the id',
+    AMOUNT NUMBER(38, 10) COMMENT 'amount'
+)
+  TARGET_LAG = DOWNSTREAM
+  WAREHOUSE = wh
+AS
+SELECT ID, AMOUNT FROM SRC;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_dynamic)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (identifier)
+      (keyword_as)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            database: (identifier)
+            schema: (identifier)
+            name: (identifier))))))
+  (statement
+    (create_dynamic_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_dynamic)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (keyword_string)
+          (keyword_comment)
+          (literal))
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number)
+            precision: (literal)
+            scale: (literal))
+          (keyword_comment)
+          (literal)))
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (identifier)
+      (keyword_as)
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier)))))))
+
+================================================================================
+CREATE and ALTER ICEBERG TABLE
+================================================================================
+
+CREATE ICEBERG TABLE IF NOT EXISTS t1 (
+  id STRING,
+  amount NUMBER(38, 10)
+)
+  EXTERNAL_VOLUME = 'vol'
+  CATALOG = 'SNOWFLAKE'
+  BASE_LOCATION = 'a/b';
+
+ALTER ICEBERG TABLE IF EXISTS t1 ADD COLUMN IF NOT EXISTS RECORD_DATE DATE COMMENT 'record date';
+ALTER ICEBERG TABLE t1 SET COMMENT = 'x';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_iceberg)
+      (keyword_table)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (keyword_string))
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number)
+            precision: (literal)
+            scale: (literal))))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          name: (identifier)
+          type: (keyword_date)
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      name: (keyword_comment)
+      value: (literal))))
+
+================================================================================
+INSERT OVERWRITE INTO
+================================================================================
+
+INSERT OVERWRITE INTO PREVIOUS_HIGHWATER_MARK (a, b)
+SELECT x, y FROM src;
+INSERT OVERWRITE INTO t2 SELECT 1;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (insert
+      (keyword_insert)
+      (keyword_overwrite)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      (list
+        (column
+          (identifier))
+        (column
+          (identifier)))
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier))))))
+  (statement
+    (insert
+      (keyword_insert)
+      (keyword_overwrite)
+      (keyword_into)
+      (object_reference
+        name: (identifier))
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (literal)))))))
+
+================================================================================
+Iceberg PARTITION BY transforms
+================================================================================
+
+CREATE ICEBERG TABLE t1 (
+  id STRING,
+  created_at TIMESTAMP_NTZ(6)
+)
+PARTITION BY (MONTH(created_at), BUCKET(8, id))
+EXTERNAL_VOLUME = 'vol'
+CATALOG = 'SNOWFLAKE'
+BASE_LOCATION = 'a/b';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (keyword_string))
+        (column_definition
+          name: (identifier)
+          type: (timestamp_ntz
+            (keyword_timestamp_ntz)
+            size: (literal))))
+      (table_partition
+        (keyword_partition)
+        (keyword_by)
+        (invocation
+          (object_reference
+            name: (identifier))
+          parameter: (term
+            value: (field
+              name: (identifier))))
+        (invocation
+          (object_reference
+            name: (identifier))
+          parameter: (term
+            value: (literal))
+          parameter: (term
+            value: (field
+              name: (identifier)))))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal)))))
+
+================================================================================
+ALTER DYNAMIC TABLE
+================================================================================
+
+ALTER DYNAMIC TABLE IF EXISTS FEE_RECON RENAME TO FEE_RECON_ORIG;
+ALTER DYNAMIC TABLE ${DB}.${SCHEMA}.FEE_RECON SET WAREHOUSE = my_wh;
+ALTER DYNAMIC ICEBERG TABLE t1 REFRESH;
+ALTER DYNAMIC TABLE t1 SUSPEND;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (rename_object
+        (keyword_rename)
+        (keyword_to)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_set)
+      name: (identifier)
+      value: (identifier)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (refresh_action
+        (keyword_refresh))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_suspend))))
+
+================================================================================
+Column DEFAULT literal followed by NOT NULL and COMMENT
+================================================================================
+
+ALTER TABLE t ADD COLUMN IF NOT EXISTS c1 VARCHAR DEFAULT 'USD' NOT NULL COMMENT 'x';
+ALTER TABLE t ADD COLUMN c2 VARCHAR NOT NULL COMMENT 'x';
+ALTER TABLE t ADD COLUMN c3 VARCHAR DEFAULT 'USD' COMMENT 'x';
+CREATE TABLE t2 (c VARCHAR DEFAULT 'USD' NOT NULL COMMENT 'x');
+CREATE TABLE t2 (c VARCHAR DEFAULT 'USD' NOT NULL);
+CREATE TABLE t3 (c NUMBER DEFAULT 0 NOT NULL, d INT);
+CREATE TABLE t4 (c VARCHAR DEFAULT 'USD' NOT NULL COMMENT 'x');
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal)
+          (keyword_not)
+          (keyword_null)
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_not)
+          (keyword_null)
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal)
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal)
+          (keyword_not)
+          (keyword_null)
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal)
+          (keyword_not)
+          (keyword_null)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))
+          (keyword_default)
+          (literal)
+          (keyword_not)
+          (keyword_null))
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_default)
+          (literal)
+          (keyword_not)
+          (keyword_null)
+          (keyword_comment)
+          (literal))))))
+
+================================================================================
+CREATE VIEW with COPY GRANTS and COMMENT
+================================================================================
+
+CREATE OR REPLACE VIEW PRICING_SCHEDULES_ORDERED
+COMMENT = 'Sorts the table'
+AS
+SELECT a FROM t;
+
+CREATE OR REPLACE SECURE VIEW v2 (a, b) COPY GRANTS COMMENT = 'x' AS SELECT 1, 2;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (procedure_comment
+        (keyword_comment)
+        (literal))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_secure)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (view_columns
+        (view_column
+          name: (identifier))
+        (view_column
+          name: (identifier)))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))
+      (procedure_comment
+        (keyword_comment)
+        (literal))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (literal))
+            (term
+              value: (literal))))))))
+
+================================================================================
+LIMIT :var, DROP/SHOW DYNAMIC TABLE, GRANT TO DATABASE ROLE
+================================================================================
+
+SELECT a FROM t LIMIT :n;
+SELECT a FROM t LIMIT 10 OFFSET :o;
+DROP DYNAMIC TABLE IF EXISTS T1;
+SHOW DYNAMIC TABLES;
+SHOW TASKS IN SCHEMA ROOT ONLY;
+GRANT USAGE ON SCHEMA PUBLIC TO DATABASE ROLE REPORT_READER;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier))))
+    (limit
+      (keyword_limit)
+      (snowflake_variable_reference)))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier))))
+    (limit
+      (keyword_limit)
+      (literal)
+      (offset
+        (keyword_offset)
+        (snowflake_variable_reference))))
+  (statement
+    (drop_snowflake_named_object
+      (keyword_drop)
+      (snowflake_drop_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (keyword_show)
+    (snowflake_show_target))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_in)
+        (keyword_schema)
+        (keyword_root)
+        (keyword_only))))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (identifier))))
+
+================================================================================
+COMMENT ON Snowflake objects
+================================================================================
+
+COMMENT ON STREAM S1 IS
+'Append-only CDC stream';
+COMMENT ON TASK db.s.t1 IS 'x';
+COMMENT ON DYNAMIC TABLE d1 IS 'y';
+COMMENT ON TABLE t IS 'z';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (comment_statement
+      (keyword_comment)
+      (keyword_on)
+      (keyword_stream)
+      (object_reference
+        name: (identifier))
+      (keyword_is)
+      (literal)))
+  (statement
+    (comment_statement
+      (keyword_comment)
+      (keyword_on)
+      (keyword_task)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (keyword_is)
+      (literal)))
+  (statement
+    (comment_statement
+      (keyword_comment)
+      (keyword_on)
+      (keyword_dynamic)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_is)
+      (literal)))
+  (statement
+    (comment_statement
+      (keyword_comment)
+      (keyword_on)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_is)
+      (literal))))
+
+================================================================================
+Multi-table INSERT FIRST/ALL
+================================================================================
+
+INSERT FIRST
+  WHEN (ERR IS NULL AND MODEL != 'flat') THEN
+    INTO FEES (A, B) VALUES (X, Y)
+  WHEN (ERR IS NULL AND DUP = TRUE) THEN
+    INTO DUP_FEES (A, B) VALUES (X, Y)
+    INTO AUDIT (A) VALUES (X)
+  ELSE
+    INTO ERRS (A) VALUES (X)
+SELECT * FROM src;
+
+INSERT ALL
+  INTO t1 (a) VALUES (x)
+  INTO t2 (a) VALUES (x)
+SELECT x FROM src;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (multi_table_insert
+      (keyword_insert)
+      (keyword_first)
+      (multi_insert_when
+        (keyword_when)
+        condition: (parenthesized_expression
+          (binary_expression
+            left: (binary_expression
+              left: (field
+                name: (identifier))
+              operator: (keyword_is)
+              right: (literal
+                (keyword_null)))
+            operator: (keyword_and)
+            right: (binary_expression
+              left: (field
+                name: (identifier))
+              right: (literal))))
+        (keyword_then)
+        (multi_insert_into
+          (keyword_into)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier))
+            (column
+              (identifier)))
+          (keyword_values)
+          (list
+            (field
+              name: (identifier))
+            (field
+              name: (identifier)))))
+      (multi_insert_when
+        (keyword_when)
+        condition: (parenthesized_expression
+          (binary_expression
+            left: (binary_expression
+              left: (field
+                name: (identifier))
+              operator: (keyword_is)
+              right: (literal
+                (keyword_null)))
+            operator: (keyword_and)
+            right: (binary_expression
+              left: (field
+                name: (identifier))
+              right: (literal
+                (keyword_true)))))
+        (keyword_then)
+        (multi_insert_into
+          (keyword_into)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier))
+            (column
+              (identifier)))
+          (keyword_values)
+          (list
+            (field
+              name: (identifier))
+            (field
+              name: (identifier))))
+        (multi_insert_into
+          (keyword_into)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier)))
+          (keyword_values)
+          (list
+            (field
+              name: (identifier)))))
+      (multi_insert_else
+        (keyword_else)
+        (multi_insert_into
+          (keyword_into)
+          (object_reference
+            name: (identifier))
+          (list
+            (column
+              (identifier)))
+          (keyword_values)
+          (list
+            (field
+              name: (identifier)))))
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (all_fields))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier))))))
+  (statement
+    (multi_table_insert
+      (keyword_insert)
+      (keyword_all)
+      (multi_insert_into
+        (keyword_into)
+        (object_reference
+          name: (identifier))
+        (list
+          (column
+            (identifier)))
+        (keyword_values)
+        (list
+          (field
+            name: (identifier))))
+      (multi_insert_into
+        (keyword_into)
+        (object_reference
+          name: (identifier))
+        (list
+          (column
+            (identifier)))
+        (keyword_values)
+        (list
+          (field
+            name: (identifier))))
+      (select
+        (keyword_select)
+        (select_expression
+          (term
+            value: (field
+              name: (identifier)))))
+      (from
+        (keyword_from)
+        (relation
+          (object_reference
+            name: (identifier)))))))
+
+================================================================================
+ALTER TABLE: search optimization, clustering key, rename constraint, column comment, multi-column add
+================================================================================
+
+ALTER TABLE t ADD SEARCH OPTIMIZATION ON EQUALITY(ID, MID), SUBSTRING(NOTE);
+ALTER TABLE t ADD SEARCH OPTIMIZATION;
+ALTER TABLE t DROP CLUSTERING KEY;
+ALTER TABLE t RENAME CONSTRAINT a TO b;
+ALTER TABLE t ALTER COLUMN KIND COMMENT 'Return type';
+ALTER TABLE t ADD COLUMN IF NOT EXISTS u DATETIME(6) COMMENT 'ts';
+ALTER ICEBERG TABLE t ADD COLUMN IF NOT EXISTS
+  A NUMBER(1, 0) COMMENT 'a',
+  COLUMN IF NOT EXISTS B NUMBER(1, 0) COMMENT 'b';
+ALTER TABLE t DROP COLUMN IF EXISTS c;;
+SELECT CAST(x AS TIMESTAMPNTZ(6)) FROM t;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_search)
+      (keyword_optimization)
+      (keyword_on)
+      (invocation
+        (object_reference
+          name: (identifier))
+        parameter: (term
+          value: (field
+            name: (identifier)))
+        parameter: (term
+          value: (field
+            name: (identifier))))
+      (invocation
+        (object_reference
+          name: (identifier))
+        parameter: (term
+          value: (field
+            name: (identifier))))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_add)
+      (keyword_search)
+      (keyword_optimization)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_drop)
+      (keyword_clustering)
+      (keyword_key)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_rename)
+      (keyword_constraint)
+      (identifier)
+      (keyword_to)
+      (identifier)))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (alter_column
+        (keyword_alter)
+        (keyword_column)
+        name: (identifier)
+        (keyword_comment)
+        (literal))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          name: (identifier)
+          type: (datetime_type
+            (keyword_datetime)
+            (literal))
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (add_column
+        (keyword_add)
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number)
+            precision: (literal)
+            scale: (literal))
+          (keyword_comment)
+          (literal)))
+      (add_column
+        (keyword_column)
+        (keyword_if)
+        (keyword_not)
+        (keyword_exists)
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number)
+            precision: (literal)
+            scale: (literal))
+          (keyword_comment)
+          (literal)))))
+  (statement
+    (alter_table
+      (keyword_alter)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (drop_column
+        (keyword_drop)
+        (keyword_column)
+        (keyword_if)
+        (keyword_exists)
+        name: (identifier))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (cast
+            name: (keyword_cast)
+            parameter: (field
+              name: (identifier))
+            (keyword_as)
+            (timestamp_ntz
+              (keyword_timestamp_ntz)
+              size: (literal))))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier))))))
+
+================================================================================
+CLONE, HYBRID/TRANSIENT tables, named FOREIGN KEY constraint, LIST
+================================================================================
+
+CREATE TABLE t2 CLONE db.s.t1;
+CREATE OR REPLACE TABLE t3 CLONE t1;
+CREATE HYBRID TABLE IF NOT EXISTS PL (id INT PRIMARY KEY, v VARCHAR);
+CREATE TRANSIENT TABLE tt (id INT);
+CREATE TABLE t4 (
+  id INT,
+  pid INT,
+  CONSTRAINT FK_X FOREIGN KEY (pid) REFERENCES t2 (id)
+)
+COMMENT = 'x';
+LIST @STAGE/a/b;
+list @STAGE/a/b/c_d PATTERN = '.*csv';
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          database: (identifier)
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (clone_clause
+        (keyword_clone)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_hybrid)
+      (keyword_table)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))
+          (keyword_primary)
+          (keyword_key))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_transient)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int)))
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int)))
+        (constraints
+          (constraint
+            (keyword_constraint)
+            name: (identifier)
+            (keyword_foreign)
+            (keyword_key)
+            (ordered_columns
+              (column
+                name: (identifier)))
+            (keyword_references)
+            (object_reference
+              name: (identifier))
+            (identifier))))
+      (table_option
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (snowflake_statement
+      (list_statement
+        (keyword_list)
+        (stage_reference))))
+  (statement
+    (snowflake_statement
+      (list_statement
+        (keyword_list)
+        (stage_reference)
+        (keyword_pattern)
+        (literal)))))
+
+================================================================================
+CREATE TABLE AS parenthesized CTE; trailing comma in select list
+================================================================================
+
+CREATE OR REPLACE TEMPORARY TABLE x AS (WITH a AS (SELECT 1 AS i) SELECT i FROM a);
+CREATE TABLE y AS (SELECT 1 AS i);
+CREATE TABLE z AS WITH a AS (SELECT 1 AS i) SELECT i FROM a;
+SELECT a, FROM t;
+SELECT a, b,
+FROM t;
+SELECT a, FROM s.t;
+SELECT a,
+FROM ${D}.PUBLIC.T;
+SELECT a, FROM db.s.t;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_temporary)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (create_query
+        (keyword_with)
+        (cte
+          (identifier)
+          (keyword_as)
+          (statement
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (literal)
+                  (keyword_as)
+                  alias: (identifier))))))
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (literal)
+              (keyword_as)
+              alias: (identifier)))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (create_query
+        (keyword_with)
+        (cte
+          (identifier)
+          (keyword_as)
+          (statement
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (literal)
+                  (keyword_as)
+                  alias: (identifier))))))
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier)))))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          database: (identifier)
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (field
+            name: (identifier)))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          database: (identifier)
+          schema: (identifier)
+          name: (identifier))))))
+
+================================================================================
+DMF string body, GRANT ON PROCEDURE, numeric table option, AWAIT
+================================================================================
+
+CREATE DATA METRIC FUNCTION CHECK_KINDS (ARG_T table(ARG_C STRING))
+RETURNS NUMBER
+COMMENT = 'Counts rows.'
+AS
+'SELECT COUNT(*) FROM ARG_T WHERE ARG_C NOT IN (\'SALE\', \'CREDIT\')';
+
+GRANT USAGE ON PROCEDURE DB.PUBLIC.SYNC_RUNBOOKS()
+  TO ROLE ADMIN;
+
+CREATE ICEBERG TABLE t (id INT)
+EXTERNAL_VOLUME = 'vol'
+CHANGE_TRACKING = TRUE
+ICEBERG_VERSION = 2;
+
+BEGIN
+  rs1 := ASYNC (EXECUTE IMMEDIATE :sql);
+  AWAIT ALL;
+  AWAIT rs1;
+END;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_data_metric_function
+      (keyword_create)
+      (keyword_data)
+      (keyword_metric)
+      (keyword_function)
+      (object_reference
+        name: (identifier))
+      arg_name: (identifier)
+      (keyword_table)
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (keyword_string)))
+      (keyword_returns)
+      (number
+        (keyword_number))
+      (keyword_comment)
+      (literal)
+      (keyword_as)
+      (literal)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_procedure)
+      (object_reference
+        database: (identifier)
+        schema: (identifier)
+        name: (identifier))
+      (function_arguments)
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_iceberg)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (int
+            (keyword_int))))
+      (table_option
+        name: (identifier)
+        value: (literal))
+      (table_option
+        name: (identifier)
+        value: (literal
+          (keyword_true)))
+      (table_option
+        name: (identifier)
+        value: (literal))))
+  (block
+    (snowflake_scripting_block
+      (keyword_begin)
+      (assignment_statement
+        name: (identifier)
+        value: (keyword_async)
+        value: (execute_statement
+          (keyword_execute)
+          (keyword_immediate)
+          (snowflake_variable_reference)))
+      (await_statement
+        (keyword_await)
+        (keyword_all))
+      (await_statement
+        (keyword_await)
+        (identifier))
+      (keyword_end))))
+
+================================================================================
+CREATE ALERT with IF EXISTS condition and action
+================================================================================
+
+CREATE OR REPLACE ALERT TASK_FAILURE_ALERT
+WAREHOUSE = 'wh'
+SCHEDULE = '5 MINUTE'
+IF (EXISTS(
+    SELECT *
+    FROM EVENTS
+    WHERE RECORD:"severity_text"::STRING = 'FATAL'
+))
+THEN
+EXECUTE IMMEDIATE $$
+  BEGIN
+    LET RUN_ID STRING := SNOWFLAKE.ALERT.GET_CONDITION_QUERY_UUID();
+    RETURN 1;
+  END;
+$$;
+
+CREATE OR ALTER ALERT HC_ALERT
+WAREHOUSE = 'wh'
+IF (EXISTS(SELECT 1 FROM EVENTS))
+THEN
+CALL NOTIFY();
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal)
+      name: (identifier)
+      value: (literal)
+      (alert_condition
+        (keyword_if)
+        (exists
+          (keyword_exists)
+          (subquery
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (all_fields))))
+            (from
+              (keyword_from)
+              (relation
+                (object_reference
+                  name: (identifier))))
+            (where
+              (keyword_where)
+              predicate: (binary_expression
+                left: (cast
+                  (variant_access
+                    expression: (field
+                      name: (identifier))
+                    path: (identifier))
+                  (keyword_string))
+                right: (literal)))))
+        (keyword_then)
+        (statement
+          (snowflake_statement
+            (execute_statement
+              (keyword_execute)
+              (keyword_immediate)
+              (dollar_quote)
+              (snowflake_scripting_block
+                (keyword_begin)
+                (let_statement
+                  (keyword_let)
+                  name: (identifier)
+                  type: (keyword_string)
+                  value: (invocation
+                    (object_reference
+                      database: (identifier)
+                      schema: (identifier)
+                      name: (identifier))))
+                (return_statement
+                  (keyword_return)
+                  value: (literal))
+                (keyword_end))
+              (dollar_quote)))))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (keyword_or)
+      (keyword_alter)
+      (snowflake_object_type)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (literal)
+      (alert_condition
+        (keyword_if)
+        (exists
+          (keyword_exists)
+          (subquery
+            (select
+              (keyword_select)
+              (select_expression
+                (term
+                  value: (literal))))
+            (from
+              (keyword_from)
+              (relation
+                (object_reference
+                  name: (identifier))))))
+        (keyword_then)
+        (statement
+          (snowflake_statement
+            (call_statement
+              (keyword_call)
+              (invocation
+                (object_reference
+                  name: (identifier))))))))))
+
+================================================================================
+SHOW GRANTS ON object
+================================================================================
+
+SHOW GRANTS ON STAGE DB.PUBLIC.PLAYBOOK_STAGE;
+SHOW GRANTS ON PROCEDURE DB.PUBLIC.SYNC_RUNBOOKS_FROM_STAGE();
+SHOW TASKS LIKE 'x' IN SCHEMA s;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_on)
+        (keyword_stage)
+        (object_reference
+          database: (identifier)
+          schema: (identifier)
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_on)
+        (keyword_procedure)
+        (object_reference
+          database: (identifier)
+          schema: (identifier)
+          name: (identifier))
+        (function_arguments))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_like)
+        (literal)
+        (keyword_in)
+        (keyword_schema)
+        (object_reference
+          name: (identifier))))))
+
+================================================================================
+Jinja {{name}} placeholders in task names and CALL targets
+================================================================================
+
+CREATE TASK IF NOT EXISTS {{health_check_name}}
+  WAREHOUSE = ${SNOWFLAKE_WAREHOUSE}
+  SCHEDULE = '60 MINUTE'
+AS
+  CALL {{ health_check_name }}();
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_task
+      (keyword_create)
+      (keyword_task)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      name: (identifier)
+      value: (identifier)
+      name: (identifier)
+      value: (literal)
+      (keyword_as)
+      (statement
+        (snowflake_statement
+          (call_statement
+            (keyword_call)
+            (invocation
+              (object_reference
+                name: (identifier)))))))))
+
+================================================================================
+CREATE VIEW with per-column COMMENT
+================================================================================
+
+CREATE OR REPLACE SECURE VIEW PAYMENTS.FEE_V1 (
+  FEE_ID COMMENT 'The unique identifier for the fee.',
+  AMOUNT COMMENT 'The signed amount of the fee.',
+  KIND
+) AS
+SELECT fee_id, amount, kind FROM fees;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_secure)
+      (keyword_view)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      (view_columns
+        (view_column
+          name: (identifier)
+          (keyword_comment)
+          (literal))
+        (view_column
+          name: (identifier)
+          (keyword_comment)
+          (literal))
+        (view_column
+          name: (identifier)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))
+            (term
+              value: (field
+                name: (identifier)))
+            (term
+              value: (field
+                name: (identifier)))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier))))))))
+
+================================================================================
+EXECUTE IMMEDIATE dollar-quoted CREATE ALERT, with scripting block action
+================================================================================
+
+EXECUTE IMMEDIATE $$
+CREATE OR REPLACE ALERT TASK_FAILURE_ALERT
+WAREHOUSE = 'WH'
+SCHEDULE = '5 MINUTE'
+IF (EXISTS(
+    SELECT 1
+    FROM events
+    WHERE severity = 'FATAL'
+))
+THEN
+    CALL PROCESS_ALERTS()
+$$;
+
+EXECUTE IMMEDIATE $$
+CREATE OR REPLACE ALERT SCRIPTED_ALERT
+WAREHOUSE = 'WH'
+SCHEDULE = '5 MINUTE'
+IF (EXISTS(SELECT 1 FROM candidates))
+THEN
+    BEGIN
+      LET v VARCHAR := 'x';
+      CALL RECORD_ALERT(:v);
+    END;
+$$;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (dollar_quote)
+        (statement
+          (create_snowflake_object
+            (keyword_create)
+            (keyword_or)
+            (keyword_replace)
+            (snowflake_object_type)
+            (object_reference
+              name: (identifier))
+            name: (identifier)
+            value: (literal)
+            name: (identifier)
+            value: (literal)
+            (alert_condition
+              (keyword_if)
+              (exists
+                (keyword_exists)
+                (subquery
+                  (select
+                    (keyword_select)
+                    (select_expression
+                      (term
+                        value: (literal))))
+                  (from
+                    (keyword_from)
+                    (relation
+                      (object_reference
+                        name: (identifier))))
+                  (where
+                    (keyword_where)
+                    predicate: (binary_expression
+                      left: (field
+                        name: (identifier))
+                      right: (literal)))))
+              (keyword_then)
+              (statement
+                (snowflake_statement
+                  (call_statement
+                    (keyword_call)
+                    (invocation
+                      (object_reference
+                        name: (identifier)))))))))
+        (dollar_quote))))
+  (statement
+    (snowflake_statement
+      (execute_statement
+        (keyword_execute)
+        (keyword_immediate)
+        (dollar_quote)
+        (statement
+          (create_snowflake_object
+            (keyword_create)
+            (keyword_or)
+            (keyword_replace)
+            (snowflake_object_type)
+            (object_reference
+              name: (identifier))
+            name: (identifier)
+            value: (literal)
+            name: (identifier)
+            value: (literal)
+            (alert_condition
+              (keyword_if)
+              (exists
+                (keyword_exists)
+                (subquery
+                  (select
+                    (keyword_select)
+                    (select_expression
+                      (term
+                        value: (literal))))
+                  (from
+                    (keyword_from)
+                    (relation
+                      (object_reference
+                        name: (identifier))))))
+              (keyword_then)
+              (snowflake_scripting_block
+                (keyword_begin)
+                (let_statement
+                  (keyword_let)
+                  name: (identifier)
+                  type: (varchar
+                    (keyword_varchar))
+                  value: (literal))
+                (statement
+                  (snowflake_statement
+                    (call_statement
+                      (keyword_call)
+                      (invocation
+                        (object_reference
+                          name: (identifier))
+                        parameter: (term
+                          value: (snowflake_variable_reference))))))
+                (keyword_end)))))
+        (dollar_quote)))))
+
+================================================================================
+CREATE MASKING / ROW ACCESS POLICY and column MASKING POLICY
+================================================================================
+
+CREATE OR REPLACE MASKING POLICY IF NOT EXISTS ID_MASK AS (VAL VARCHAR) RETURNS VARCHAR ->
+CASE
+  WHEN IS_ROLE_IN_SESSION('ADMIN') THEN VAL
+  ELSE '***MASKED***'
+END
+COMMENT = 'mask ids';
+
+CREATE ROW ACCESS POLICY rap AS (acct VARCHAR) RETURNS BOOLEAN -> acct = CURRENT_ACCOUNT();
+
+CREATE TABLE IF NOT EXISTS ID_LIST (
+  ID VARCHAR(16777216) WITH MASKING POLICY ID_MASK,
+  OTHER VARCHAR MASKING POLICY ID_MASK USING (OTHER, ID),
+  CREATED_AT TIMESTAMP_NTZ(9)
+);
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_policy
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_masking)
+      (keyword_policy)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (varchar
+        (keyword_varchar))
+      (case
+        (keyword_case)
+        (keyword_when)
+        (invocation
+          (object_reference
+            name: (identifier))
+          parameter: (term
+            value: (literal)))
+        (keyword_then)
+        (field
+          name: (identifier))
+        (keyword_else)
+        (literal)
+        (keyword_end))
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (create_policy
+      (keyword_create)
+      (keyword_row)
+      (keyword_access)
+      (keyword_policy)
+      (object_reference
+        name: (identifier))
+      (keyword_as)
+      (function_arguments
+        (function_argument
+          (identifier)
+          (varchar
+            (keyword_varchar))))
+      (keyword_returns)
+      (keyword_boolean)
+      (binary_expression
+        left: (field
+          name: (identifier))
+        right: (invocation
+          (object_reference
+            name: (identifier))))))
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar)
+            size: (literal))
+          (keyword_with)
+          (keyword_masking)
+          (keyword_policy)
+          (object_reference
+            name: (identifier)))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar))
+          (keyword_masking)
+          (keyword_policy)
+          (object_reference
+            name: (identifier))
+          (keyword_using)
+          (identifier)
+          (identifier))
+        (column_definition
+          name: (identifier)
+          type: (timestamp_ntz
+            (keyword_timestamp_ntz)
+            size: (literal)))))))
+
+================================================================================
+Hybrid table DEFAULT seq.NEXTVAL, constraint COMMENT, EVENT TABLE
+================================================================================
+
+CREATE HYBRID TABLE IF NOT EXISTS JOB_ITEMS_STAGING (
+  JOB_ITEM_ID NUMBER DEFAULT SEQ_JOB_ITEM_ID.NEXTVAL PRIMARY KEY COMMENT 'Unique identifier for the job item.',
+  JOB_ID NUMBER NOT NULL COMMENT 'The parent job.',
+  EVENT_TYPE VARCHAR(100) NOT NULL,
+  REPORT_REF VARCHAR(255) NULL,
+  UNIQUE (EVENT_TYPE, REPORT_REF) COMMENT 'Enforce one active config per event/report pair.'
+);
+
+CREATE EVENT TABLE IF NOT EXISTS PUBLIC.NATIVE_EVENTS
+COMMENT = 'Database-scoped native event table.';
+
+DROP EVENT TABLE IF EXISTS PUBLIC.NATIVE_EVENTS;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_hybrid)
+      (keyword_table)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))
+          (keyword_default)
+          (field
+            (object_reference
+              name: (identifier))
+            name: (identifier))
+          (keyword_primary)
+          (keyword_key)
+          (keyword_comment)
+          (literal))
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))
+          (keyword_not)
+          (keyword_null)
+          (keyword_comment)
+          (literal))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar)
+            size: (literal))
+          (keyword_not)
+          (keyword_null))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar)
+            size: (literal))
+          (keyword_null))
+        (constraints
+          (constraint
+            (keyword_unique)
+            (ordered_columns
+              (column
+                name: (identifier))
+              (column
+                name: (identifier)))
+            (keyword_comment)
+            (literal))))))
+  (statement
+    (create_snowflake_object
+      (keyword_create)
+      (snowflake_object_type)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        schema: (identifier)
+        name: (identifier))
+      name: (keyword_comment)
+      value: (literal)))
+  (statement
+    (drop_snowflake_object
+      (keyword_drop)
+      (snowflake_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        schema: (identifier)
+        name: (identifier)))))
+
+================================================================================
+Hybrid table INDEX, CREATE INDEX, DROP INDEX
+================================================================================
+
+CREATE HYBRID TABLE OUTPUT_FILES (
+  OUTPUT_FILE_ID NUMBER PRIMARY KEY,
+  JOB_ID NUMBER NOT NULL,
+  STATUS VARCHAR,
+  INDEX IDX_OUTPUT_FILES_JOB (JOB_ID),
+  INDEX IDX_OUTPUT_FILES_STATUS (STATUS) INCLUDE (JOB_ID)
+);
+
+CREATE INDEX IF NOT EXISTS IDX_EXTRA ON OUTPUT_FILES (STATUS) INCLUDE (JOB_ID);
+
+DROP INDEX IF EXISTS OUTPUT_FILES.IDX_EXTRA;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_hybrid)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))
+          (keyword_primary)
+          (keyword_key))
+        (column_definition
+          name: (identifier)
+          type: (number
+            (keyword_number))
+          (keyword_not)
+          (keyword_null))
+        (column_definition
+          name: (identifier)
+          type: (varchar
+            (keyword_varchar)))
+        (constraints
+          (constraint
+            (index_definition
+              (keyword_index)
+              (identifier)
+              (ordered_columns
+                (column
+                  name: (identifier)))))
+          (constraint
+            (index_definition
+              (keyword_index)
+              (identifier)
+              (ordered_columns
+                (column
+                  name: (identifier)))
+              (keyword_include)
+              (ordered_columns
+                (column
+                  name: (identifier)))))))))
+  (statement
+    (create_index
+      (keyword_create)
+      (keyword_index)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (keyword_on)
+      (object_reference
+        name: (identifier))
+      (ordered_columns
+        (column
+          name: (identifier)))
+      (keyword_include)
+      (ordered_columns
+        (column
+          name: (identifier)))))
+  (statement
+    (drop_index
+      (keyword_drop)
+      (keyword_index)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        schema: (identifier)
+        name: (identifier)))))
+
+================================================================================
+SET variable, $session_variable reference, SHOW TASKS LIKE :var
+================================================================================
+
+SET demo_account_id = 'demo-account-001';
+
+SELECT
+  $demo_account_id AS ACCOUNT_ID,
+  1 AS AMOUNT
+FROM t;
+
+SHOW TASKS LIKE :child_task_pattern IN SCHEMA;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (set_statement
+      (keyword_set)
+      (object_reference
+        name: (identifier))
+      (literal)))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (snowflake_session_variable)
+          (keyword_as)
+          alias: (identifier))
+        (term
+          value: (literal)
+          (keyword_as)
+          alias: (identifier))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (snowflake_statement
+      (snowflake_show_statement
+        (keyword_show)
+        (snowflake_show_target)
+        (keyword_like)
+        (snowflake_variable_reference)
+        (keyword_in)
+        (keyword_schema)))))
+
+================================================================================
+GRANT/REVOKE on tasks, ALL/FUTURE objects, Flyway colon placeholder
+================================================================================
+
+GRANT USAGE ON SCHEMA ${flyway:defaultSchema} TO DATABASE ROLE APP_ROLE;
+GRANT OPERATE ON TASK PROCESS_TASK TO DATABASE ROLE APP_ROLE;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA ${flyway:defaultSchema} TO DATABASE ROLE APP_ROLE;
+GRANT SELECT ON FUTURE TABLES IN SCHEMA analytics TO ROLE reader;
+REVOKE SELECT ON ALL VIEWS IN DATABASE prod FROM ROLE reader;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_task)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_database)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_future)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_schema)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier)))
+  (statement
+    (revoke_statement
+      (keyword_revoke)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_all)
+      (snowflake_object_type)
+      (keyword_in)
+      (keyword_database)
+      (object_reference
+        name: (identifier))
+      (keyword_from)
+      (keyword_role)
+      (identifier))))
+
+================================================================================
+MATERIALIZED VIEW and SEQUENCE alter/drop
+================================================================================
+
+CREATE OR REPLACE MATERIALIZED VIEW mv_orders (ORDER_ID COMMENT 'Order id', TOTAL)
+  COPY GRANTS
+  COMMENT = 'orders rollup'
+  CLUSTER BY (ORDER_ID)
+AS
+SELECT ORDER_ID, SUM(AMOUNT) AS TOTAL FROM orders GROUP BY ORDER_ID;
+
+ALTER MATERIALIZED VIEW mv_orders SUSPEND;
+ALTER MATERIALIZED VIEW mv_orders RENAME TO mv_orders_v2;
+DROP MATERIALIZED VIEW IF EXISTS mv_orders_v2;
+
+CREATE SEQUENCE IF NOT EXISTS seq_id START = 1 INCREMENT = 1 NOORDER COMMENT = 'ids';
+ALTER SEQUENCE seq_id SET INCREMENT = 5;
+ALTER SEQUENCE IF EXISTS seq_id RENAME TO seq_id_v2;
+DROP SEQUENCE IF EXISTS seq_id_v2;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_view
+      (keyword_create)
+      (keyword_or)
+      (keyword_replace)
+      (keyword_materialized)
+      (keyword_view)
+      (object_reference
+        name: (identifier))
+      (view_columns
+        (view_column
+          name: (identifier)
+          (keyword_comment)
+          (literal))
+        (view_column
+          name: (identifier)))
+      (copy_clause
+        (keyword_copy)
+        (keyword_grants))
+      (procedure_comment
+        (keyword_comment)
+        (literal))
+      (cluster_by
+        (keyword_cluster)
+        (keyword_by)
+        (field
+          name: (identifier)))
+      (keyword_as)
+      (create_query
+        (select
+          (keyword_select)
+          (select_expression
+            (term
+              value: (field
+                name: (identifier)))
+            (term
+              value: (invocation
+                (object_reference
+                  name: (identifier))
+                parameter: (term
+                  value: (field
+                    name: (identifier))))
+              (keyword_as)
+              alias: (identifier))))
+        (from
+          (keyword_from)
+          (relation
+            (object_reference
+              name: (identifier))))
+        (group_by
+          (keyword_group)
+          (keyword_by)
+          (field
+            name: (identifier))))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_suspend)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (rename_object
+        (keyword_rename)
+        (keyword_to)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (drop_snowflake_named_object
+      (keyword_drop)
+      (snowflake_drop_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))))
+  (statement
+    (create_sequence
+      (keyword_create)
+      (keyword_sequence)
+      (keyword_if)
+      (keyword_not)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (keyword_start)
+      start: (literal)
+      (keyword_increment)
+      increment: (literal)
+      (keyword_noorder)
+      (table_option
+        name: (identifier)
+        value: (literal))))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (object_reference
+        name: (identifier))
+      (keyword_set)
+      name: (identifier)
+      value: (literal)))
+  (statement
+    (alter_snowflake_named_object
+      (keyword_alter)
+      (snowflake_alter_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier))
+      (rename_object
+        (keyword_rename)
+        (keyword_to)
+        (object_reference
+          name: (identifier)))))
+  (statement
+    (drop_snowflake_named_object
+      (keyword_drop)
+      (snowflake_drop_object_type)
+      (keyword_if)
+      (keyword_exists)
+      (object_reference
+        name: (identifier)))))
+================================================================================
+Grant on database to role
+================================================================================
+
+GRANT USAGE ON DATABASE my_db TO ROLE jdoe_role;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (grant_statement
+      (keyword_grant)
+      (privilege
+        (identifier))
+      (keyword_on)
+      (keyword_database)
+      (object_reference
+        name: (identifier))
+      (keyword_to)
+      (keyword_role)
+      (identifier))))
+

@@ -6,18 +6,12 @@ export default {
     seq(
       choice(
         $.keyword_boolean,
-        $.bit,
         $.binary,
         $.varbinary,
-        $.keyword_image,
 
-        $.keyword_smallserial,
-        $.keyword_serial,
-        $.keyword_bigserial,
 
         $.tinyint,
         $.smallint,
-        $.mediumint,
         $.int,
         $.bigint,
         $.decimal,
@@ -25,53 +19,38 @@ export default {
         $.double,
         $.float,
 
-        $.keyword_money,
-        $.keyword_smallmoney,
 
         $.char,
         $.varchar,
         $.nchar,
         $.nvarchar,
-        $.numeric,
         $.keyword_string,
         $.keyword_text,
 
-        $.keyword_uuid,
 
-        $.keyword_json,
-        $.keyword_jsonb,
-        $.keyword_xml,
 
-        $.keyword_bytea,
-        $.keyword_inet,
 
-        $.enum,
 
         $.keyword_date,
         $.keyword_datetime,
-        $.keyword_datetime2,
-        $.datetimeoffset,
-        $.keyword_smalldatetime,
+        $.datetime_type,
         $.time,
         $.timestamp,
         $.keyword_timestamptz,
-        $.keyword_interval,
 
         $.keyword_geometry,
         $.keyword_geography,
-        $.keyword_box2d,
-        $.keyword_box3d,
 
-        $.keyword_oid,
-        $.keyword_name,
-        $.keyword_regclass,
-        $.keyword_regnamespace,
-        $.keyword_regproc,
-        $.keyword_regtype,
 
         // Snowflake semi-structured types
         $.keyword_variant,
         $.keyword_object,
+        $.object_type,
+        $.period_type,
+
+        // Snowflake structured types MAP(k, v), ARRAY, ARRAY(type)
+        $.map_type,
+        $.structured_array_type,
 
         // Snowflake numeric
         $.number,
@@ -90,37 +69,33 @@ export default {
 
         field("custom_type", $.object_reference)
       ),
-      optional($.array_size_definition)
     ),
   ),
 
-  array_size_definition: $ => prec.left(
-    choice(
-      seq($.keyword_array, optional($._array_size_definition)),
-      repeat1($._array_size_definition),
-    ),
+  // MAP(key_type, value_type)
+  map_type: $ => seq(
+    $.keyword_map,
+    '(',
+    field('key', $._type),
+    ',',
+    field('value', $._type),
+    ')',
   ),
 
-  _array_size_definition: $ => seq(
-    '[',
-    optional(field("size", alias($._integer, $.literal))),
-    ']'
+  // Snowflake ARRAY or structured ARRAY(element_type), as in DROP PROCEDURE p(ARRAY(VARCHAR))
+  structured_array_type: $ => seq(
+    $.keyword_array,
+    optional(seq(
+      '(',
+      field('element', $._type),
+      ')',
+    )),
   ),
 
-  tinyint: $ => unsigned_type($, parametric_type($, $.keyword_tinyint)),
-  smallint: $ => unsigned_type($, parametric_type($, $.keyword_smallint)),
-  mediumint: $ => unsigned_type($, parametric_type($, $.keyword_mediumint)),
-  int: $ => unsigned_type($, parametric_type($, $.keyword_int)),
-  bigint: $ => unsigned_type($, parametric_type($, $.keyword_bigint)),
-
-  bit: $ => choice(
-      $.keyword_bit,
-      seq(
-          $.keyword_bit,
-          prec(0, parametric_type($, $.keyword_varying, ['precision'])),
-      ),
-      prec(1, parametric_type($, $.keyword_bit, ['precision'])),
-  ),
+  tinyint: $ => parametric_type($, $.keyword_tinyint),
+  smallint: $ => parametric_type($, $.keyword_smallint),
+  int: $ => parametric_type($, $.keyword_int),
+  bigint: $ => parametric_type($, $.keyword_bigint),
 
   binary: $ => parametric_type($, $.keyword_binary, ['precision']),
   varbinary: $ => parametric_type($, $.keyword_varbinary, ['precision']),
@@ -128,14 +103,14 @@ export default {
   // TODO: should qualify against /\\b(0?[1-9]|[1-4][0-9]|5[0-4])\\b/g
   float: $  => choice(
     parametric_type($, $.keyword_float, ['precision']),
-    unsigned_type($, parametric_type($, $.keyword_float, ['precision', 'scale'])),
+    parametric_type($, $.keyword_float, ['precision', 'scale']),
   ),
 
   double: $ => choice(
     make_keyword("float8"),
-    unsigned_type($, parametric_type($, $.keyword_double, ['precision', 'scale'])),
-    unsigned_type($, parametric_type($, seq($.keyword_double, $.keyword_precision), ['precision', 'scale'])),
-    unsigned_type($, parametric_type($, $.keyword_real, ['precision', 'scale'])),
+    parametric_type($, $.keyword_double, ['precision', 'scale']),
+    parametric_type($, seq($.keyword_double, $.keyword_precision), ['precision', 'scale']),
+    parametric_type($, $.keyword_real, ['precision', 'scale']),
   ),
 
   decimal: $ => choice(
@@ -151,27 +126,25 @@ export default {
   nchar: $ => parametric_type($, $.keyword_nchar),
   nvarchar: $ => parametric_type($, $.keyword_nvarchar),
 
-  _include_time_zone: $ => seq(
-    choice($.keyword_with, $.keyword_without),
-    $.keyword_time,
-    $.keyword_zone,
-  ),
-  datetimeoffset: $ => parametric_type($, $.keyword_datetimeoffset),
-  time: $ => seq(
-    parametric_type($, $.keyword_time),
-    optional($._include_time_zone),
-  ),
+  time: $ => parametric_type($, $.keyword_time),
+  // TIMESTAMP[(p)], plus the Snowflake synonyms TIMESTAMP WITH TIME ZONE (TIMESTAMP_TZ),
+  // TIMESTAMP WITH LOCAL TIME ZONE (TIMESTAMP_LTZ) and TIMESTAMP WITHOUT TIME ZONE (TIMESTAMP_NTZ)
   timestamp: $ => seq(
     parametric_type($, $.keyword_timestamp),
-    optional($._include_time_zone),
+    optional(field('time_zone', $.time_zone_suffix)),
   ),
-  timestamptz: $ => parametric_type($, $.keyword_timestamptz),
+  time_zone_suffix: $ => choice(
+    seq($.keyword_with, optional($.keyword_local), $.keyword_time, $.keyword_zone),
+    seq($.keyword_without, $.keyword_time, $.keyword_zone),
+  ),
 
   // Snowflake types
   number: $ => choice(
     parametric_type($, $.keyword_number, ['precision']),
     parametric_type($, $.keyword_number, ['precision', 'scale']),
   ),
+  // DATETIME(precision) (alias of TIMESTAMP_NTZ)
+  datetime_type: $ => seq($.keyword_datetime, wrapped_in_parenthesis(alias($._natural_number, $.literal))),
   timestamp_ltz: $ => parametric_type($, $.keyword_timestamp_ltz),
   timestamp_ntz: $ => parametric_type($, $.keyword_timestamp_ntz),
   timestamp_tz: $ => parametric_type($, $.keyword_timestamp_tz),
@@ -183,11 +156,6 @@ export default {
     ',',
     field('dimension', alias($._natural_number, $.literal)),
     ')',
-  ),
-
-  enum: $ => seq(
-    $.keyword_enum,
-    paren_list(field("value", alias($._literal_string, $.literal)), true)
   ),
 
   array: $ => choice(
@@ -215,17 +183,6 @@ export default {
   ),
 
 };
-
-function unsigned_type($, type) {
-  return choice(
-    seq($.keyword_unsigned, type),
-    seq(
-      type,
-      optional($.keyword_unsigned),
-      optional($.keyword_zerofill),
-    ),
-  )
-}
 
 function parametric_type($, type, params = ['size']) {
   return prec.right(1,

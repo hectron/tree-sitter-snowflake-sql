@@ -286,3 +286,147 @@ CREATE TABLE events (
             (keyword_vector)
             element_type: (identifier)
             dimension: (literal)))))))
+================================================================================
+MAP structured type in casts
+================================================================================
+
+SELECT OBJECT_CONSTRUCT('a', 1)::MAP(STRING, VARIANT) AS m;
+SELECT CAST(x AS MAP(STRING, MAP(STRING, NUMBER))) FROM t;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (cast
+            (invocation
+              (object_reference
+                name: (identifier))
+              parameter: (term
+                value: (literal))
+              parameter: (term
+                value: (literal)))
+            (map_type
+              (keyword_map)
+              key: (keyword_string)
+              value: (keyword_variant)))
+          (keyword_as)
+          alias: (identifier)))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (cast
+            name: (keyword_cast)
+            parameter: (field
+              name: (identifier))
+            (keyword_as)
+            (map_type
+              (keyword_map)
+              key: (keyword_string)
+              value: (map_type
+                (keyword_map)
+                key: (keyword_string)
+                value: (number
+                  (keyword_number))))))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier))))))
+
+================================================================================
+TIMESTAMP WITH [LOCAL] TIME ZONE / WITHOUT TIME ZONE synonyms, alongside WITH MASKING POLICY
+================================================================================
+
+CREATE TABLE t (
+  a TIMESTAMP WITH TIME ZONE,
+  b TIMESTAMP(9) WITH LOCAL TIME ZONE,
+  c TIMESTAMP WITHOUT TIME ZONE,
+  d TIMESTAMP WITH MASKING POLICY p,
+  e TIMESTAMP WITH TIME ZONE WITH MASKING POLICY p
+);
+SELECT x::TIMESTAMP WITH TIME ZONE FROM t;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (create_table
+      (keyword_create)
+      (keyword_table)
+      (object_reference
+        name: (identifier))
+      (column_definitions
+        (column_definition
+          name: (identifier)
+          type: (timestamp
+            (keyword_timestamp)
+            time_zone: (time_zone_suffix
+              (keyword_with)
+              (keyword_time)
+              (keyword_zone))))
+        (column_definition
+          name: (identifier)
+          type: (timestamp
+            (keyword_timestamp)
+            size: (literal)
+            time_zone: (time_zone_suffix
+              (keyword_with)
+              (keyword_local)
+              (keyword_time)
+              (keyword_zone))))
+        (column_definition
+          name: (identifier)
+          type: (timestamp
+            (keyword_timestamp)
+            time_zone: (time_zone_suffix
+              (keyword_without)
+              (keyword_time)
+              (keyword_zone))))
+        (column_definition
+          name: (identifier)
+          type: (timestamp
+            (keyword_timestamp))
+          (keyword_with)
+          (keyword_masking)
+          (keyword_policy)
+          (object_reference
+            name: (identifier)))
+        (column_definition
+          name: (identifier)
+          type: (timestamp
+            (keyword_timestamp)
+            time_zone: (time_zone_suffix
+              (keyword_with)
+              (keyword_time)
+              (keyword_zone)))
+          (keyword_with)
+          (keyword_masking)
+          (keyword_policy)
+          (object_reference
+            name: (identifier))))))
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (cast
+            (field
+              name: (identifier))
+            (timestamp
+              (keyword_timestamp)
+              time_zone: (time_zone_suffix
+                (keyword_with)
+                (keyword_time)
+                (keyword_zone)))))))
+    (from
+      (keyword_from)
+      (relation
+        (object_reference
+          name: (identifier))))))
+

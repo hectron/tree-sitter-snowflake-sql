@@ -121,9 +121,9 @@ Casts and arrays
 ================================================================================
 
 select col_has_check(
-  'one'::name,
-  'two'::name,
-  array['three'::name, 'four'::name],
+  'one'::text,
+  'two'::text,
+  array['three'::text, 'four'::text],
   'description'
 );
 
@@ -141,20 +141,20 @@ select col_has_check(
             parameter: (term
               value: (cast
                 (literal)
-                (keyword_name)))
+                (keyword_text)))
             parameter: (term
               value: (cast
                 (literal)
-                (keyword_name)))
+                (keyword_text)))
             parameter: (term
               value: (array
                 (keyword_array)
                 (cast
                   (literal)
-                  (keyword_name))
+                  (keyword_text))
                 (cast
                   (literal)
-                  (keyword_name))))
+                  (keyword_text))))
             parameter: (term
               value: (literal))))))))
 
@@ -243,85 +243,6 @@ FROM mytable;
       (relation
         (object_reference
           (identifier))))))
-
-================================================================================
-GROUP CONCAT
-================================================================================
-
-SELECT GROUP_CONCAT(uid SEPARATOR ",")
-FROM some_table
-GROUP BY some_field;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (invocation
-            (object_reference
-              name: (identifier))
-            parameter: (term
-              value: (field
-                name: (identifier)))
-            (keyword_separator)
-            (literal)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))))
-    (group_by
-      (keyword_group)
-      (keyword_by)
-      (field
-        name: (identifier)))))
-
-================================================================================
-GROUP CONCAT with all optional fields
-================================================================================
-
-SELECT GROUP_CONCAT(DISTINCT uid ORDER BY uid DESC SEPARATOR ",")
-FROM some_table
-GROUP BY some_field;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (select
-      (keyword_select)
-      (select_expression
-        (term
-          value: (invocation
-            (object_reference
-              name: (identifier))
-            (keyword_distinct)
-            parameter: (term
-              value: (field
-                name: (identifier)))
-            (order_by
-              (keyword_order)
-              (keyword_by)
-              (order_target
-                (field
-                  name: (identifier))
-                (direction
-                  (keyword_desc))))
-            (keyword_separator)
-            (literal)))))
-    (from
-      (keyword_from)
-      (relation
-        (object_reference
-          name: (identifier))))
-    (group_by
-      (keyword_group)
-      (keyword_by)
-      (field
-        name: (identifier)))))
 
 ================================================================================
 GROUP CONCAT Impala
@@ -518,7 +439,7 @@ Basic SQL function creation
 create or replace function public.fn()
  returns int
  language sql
-return 1;
+as $$select 1$$;
 
 --------------------------------------------------------------------------------
 
@@ -540,8 +461,15 @@ return 1;
         (keyword_language)
         (identifier))
       (function_body
-        (keyword_return)
-        (literal)))))
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (literal)))))
+        (dollar_quote)))))
 
 ================================================================================
 With arguments
@@ -550,7 +478,7 @@ With arguments
 create or replace function public.fn(one int, two text)
  returns int
  language sql
-return 1;
+as $$select 1$$;
 
 --------------------------------------------------------------------------------
 
@@ -579,8 +507,15 @@ return 1;
         (keyword_language)
         (identifier))
       (function_body
-        (keyword_return)
-        (literal)))))
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (literal)))))
+        (dollar_quote)))))
 
 ================================================================================
 Function details
@@ -590,12 +525,8 @@ create or replace function public.fn()
   returns int
   language sql
   immutable
-  parallel safe
-  leakproof
   strict
-  cost 100
-  rows 1
-return 1;
+as $$select 1$$;
 
 --------------------------------------------------------------------------------
 
@@ -618,20 +549,18 @@ return 1;
         (identifier))
       (function_volatility
         (keyword_immutable))
-      (function_safety
-        (keyword_parallel)
-        (keyword_safe))
-      (function_leakproof
-        (keyword_leakproof))
       (function_strictness
         (keyword_strict))
-      (function_cost
-        (keyword_cost))
-      (function_rows
-        (keyword_rows))
       (function_body
-        (keyword_return)
-        (literal)))))
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (literal)))))
+        (dollar_quote)))))
 
 ================================================================================
 Function details, specified after string body
@@ -642,11 +571,7 @@ create or replace function public.fn()
   as $$select 1$$
   language sql
   volatile
-  parallel restricted
-  not leakproof
-  returns null on null input
-  cost 100
-  rows 1;
+  returns null on null input;
 
 --------------------------------------------------------------------------------
 
@@ -679,22 +604,12 @@ create or replace function public.fn()
         (identifier))
       (function_volatility
         (keyword_volatile))
-      (function_safety
-        (keyword_parallel)
-        (keyword_restricted))
-      (function_leakproof
-        (keyword_not)
-        (keyword_leakproof))
       (function_strictness
         (keyword_returns)
         (keyword_null)
         (keyword_on)
         (keyword_null)
-        (keyword_input))
-      (function_cost
-        (keyword_cost))
-      (function_rows
-        (keyword_rows)))))
+        (keyword_input)))))
 
 ================================================================================
 With a string body
@@ -759,43 +674,6 @@ as 'create table x (id int) row_format=dynamic';
       (function_body
         (keyword_as)
         (literal)))))
-
-================================================================================
-With `begin atomic`
-================================================================================
-
-create or replace function public.fn()
-  returns int
-  language sql
-begin atomic
-  return 1;
-end;
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_function
-      (keyword_create)
-      (keyword_or)
-      (keyword_replace)
-      (keyword_function)
-      (object_reference
-        (identifier)
-        (identifier))
-      (function_arguments)
-      (keyword_returns)
-      (int
-        (keyword_int))
-      (function_language
-        (keyword_language)
-        (identifier))
-      (function_body
-        (keyword_begin)
-        (keyword_atomic)
-        (keyword_return)
-        (literal)
-        (keyword_end)))))
 
 ================================================================================
 Dollar quoting a simple PLPGSQL body
@@ -906,8 +784,8 @@ More complex function body
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $function$
 begin
 
@@ -933,7 +811,7 @@ begin
   from knn
   where knn.alpha = htable.alpha;
 
-  return new;
+  return 1;
 
 end;
 $function$
@@ -952,7 +830,8 @@ $function$
         (identifier))
       (function_arguments)
       (keyword_returns)
-      (keyword_trigger)
+      (varchar
+        (keyword_varchar))
       (function_language
         (keyword_language)
         (identifier))
@@ -1061,8 +940,7 @@ $function$
                     (identifier))
                   (identifier))))))
         (keyword_return)
-        (field
-          (identifier))
+        (literal)
         (keyword_end)
         (dollar_quote)))))
 
@@ -1070,10 +948,10 @@ $function$
 SQL function creation with complex arguments
 ================================================================================
 
-create or replace function public.fn(IN arg1 text, OUT arg2 int DEFAULT 12, IN OUT arg3 text = 'test')
+create or replace function public.fn(arg1 text, arg2 int DEFAULT 12, arg3 text DEFAULT 'test')
  returns int
  language sql
-return 1;
+as $$select 1$$;
 
 --------------------------------------------------------------------------------
 
@@ -1089,21 +967,18 @@ return 1;
         (identifier))
       (function_arguments
         (function_argument
-          (keyword_in)
           (identifier)
           (keyword_text))
         (function_argument
-          (keyword_out)
           (identifier)
           (int
             (keyword_int))
           (keyword_default)
           (literal))
         (function_argument
-          (keyword_in)
-          (keyword_out)
           (identifier)
           (keyword_text)
+          (keyword_default)
           (literal)))
       (keyword_returns)
       (int
@@ -1112,16 +987,23 @@ return 1;
         (keyword_language)
         (identifier))
       (function_body
-        (keyword_return)
-        (literal)))))
+        (keyword_as)
+        (dollar_quote)
+        (statement
+          (select
+            (keyword_select)
+            (select_expression
+              (term
+                (literal)))))
+        (dollar_quote)))))
 
 ================================================================================
 Function body with a $$ string literal
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $a$
 begin
   return $b$text$b$;
@@ -1142,7 +1024,8 @@ $a$
         name: (identifier))
       (function_arguments)
       (keyword_returns)
-      (keyword_trigger)
+      (varchar
+        (keyword_varchar))
       (function_language
         (keyword_language)
         (identifier))
@@ -1151,10 +1034,7 @@ $a$
         (dollar_quote)
         (keyword_begin)
         (keyword_return)
-        (ERROR
-          (UNEXPECTED 'b'))
-        (field
-          name: (identifier))
+        (literal)
         (keyword_end)
         (dollar_quote)))))
 
@@ -1163,8 +1043,8 @@ Function body with non alphabetic dollar quoted tags
 ================================================================================
 
 create or replace function public.do_stuff()
-  returns trigger
-  language plpgsql
+  returns varchar
+  language sql
 as $_$
 begin
   return $.$text$.$;
@@ -1185,7 +1065,8 @@ $_$
         name: (identifier))
       (function_arguments)
       (keyword_returns)
-      (keyword_trigger)
+      (varchar
+        (keyword_varchar))
       (function_language
         (keyword_language)
         (identifier))
@@ -1194,313 +1075,6 @@ $_$
         (dollar_quote)
         (keyword_begin)
         (keyword_return)
-        (ERROR
-          (UNEXPECTED '.')
-          (UNEXPECTED 't'))
-        (field
-          name: (identifier))
-        (ERROR
-          (UNEXPECTED ';'))
+        (literal)
         (keyword_end)
         (dollar_quote)))))
-
-================================================================================
-TSQL Function Returns
-================================================================================
-
-CREATE FUNCTION dbo.fn(@par int, @parr nvarchar(4000))
-RETURNS int
-  AS
-  BEGIN
-    SELECT * FROM ATABLE
-    RETURN @par
-  END
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_function
-      (keyword_create)
-      (keyword_function)
-      (object_reference
-        (identifier)
-        (identifier))
-      (function_arguments
-        (function_argument
-          (identifier)
-          (int
-            (keyword_int)))
-        (function_argument
-          (identifier)
-          (nvarchar
-            (keyword_nvarchar)
-            (literal))))
-      (keyword_returns)
-      (int
-        (keyword_int))
-      (function_body
-        (keyword_as)
-        (keyword_begin)
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (keyword_return)
-        (stage_reference)
-        (keyword_end)))))
-
-================================================================================
-TSQL Function Declare
-================================================================================
-
-CREATE FUNCTION dbo.fn(@par int, @parr nvarchar(4000))
-RETURNS int
-  AS
-  BEGIN
-    DECLARE @s int, @t int, @i int, @j int
-    SELECT * FROM ATABLE
-    RETURN @par
-  END
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_function
-      (keyword_create)
-      (keyword_function)
-      (object_reference
-        (identifier)
-        (identifier))
-      (function_arguments
-        (function_argument
-          (identifier)
-          (int
-            (keyword_int)))
-        (function_argument
-          (identifier)
-          (nvarchar
-            (keyword_nvarchar)
-            (literal))))
-      (keyword_returns)
-      (int
-        (keyword_int))
-      (function_body
-        (keyword_as)
-        (keyword_begin)
-        (var_declarations
-          (keyword_declare)
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int))))
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (keyword_return)
-        (stage_reference)
-        (keyword_end)))))
-
-================================================================================
-TSQL Function Declare Multiple Statements
-================================================================================
-
-CREATE FUNCTION dbo.fn(@par int, @parr nvarchar(4000))
-RETURNS int
-  AS
-  BEGIN
-    DECLARE @s int, @t int, @i int, @j int
-    SELECT * FROM ATABLE
-    SELECT * FROM ANOTHER_TABLE
-    RETURN @par
-  END
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_function
-      (keyword_create)
-      (keyword_function)
-      (object_reference
-        (identifier)
-        (identifier))
-      (function_arguments
-        (function_argument
-          (identifier)
-          (int
-            (keyword_int)))
-        (function_argument
-          (identifier)
-          (nvarchar
-            (keyword_nvarchar)
-            (literal))))
-      (keyword_returns)
-      (int
-        (keyword_int))
-      (function_body
-        (keyword_as)
-        (keyword_begin)
-        (var_declarations
-          (keyword_declare)
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int))))
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (keyword_return)
-        (stage_reference)
-        (keyword_end)))))
-
-================================================================================
-TSQL Function With Nested BEGIN-END
-================================================================================
-
-CREATE FUNCTION dbo.fn(@par int, @parr nvarchar(4000))
-RETURNS int
-  AS
-  BEGIN
-    DECLARE @s int, @t int, @i int, @j int
-    BEGIN
-      SELECT * FROM ATABLE
-    END
-    BEGIN
-      SELECT * FROM ANOTHER_TABLE
-    END
-    RETURN @par
-  END
-
---------------------------------------------------------------------------------
-
-(program
-  (statement
-    (create_function
-      (keyword_create)
-      (keyword_function)
-      (object_reference
-        (identifier)
-        (identifier))
-      (function_arguments
-        (function_argument
-          (identifier)
-          (int
-            (keyword_int)))
-        (function_argument
-          (identifier)
-          (nvarchar
-            (keyword_nvarchar)
-            (literal))))
-      (keyword_returns)
-      (int
-        (keyword_int))
-      (function_body
-        (keyword_as)
-        (keyword_begin)
-        (var_declarations
-          (keyword_declare)
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int)))
-          (var_declaration
-            (identifier)
-            (int
-              (keyword_int))))
-        (keyword_begin)
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (keyword_end)
-        (keyword_begin)
-        (statement
-          (select
-            (keyword_select)
-            (select_expression
-              (term
-                (all_fields))))
-          (from
-            (keyword_from)
-            (relation
-              (object_reference
-                (identifier)))))
-        (keyword_end)
-        (keyword_return)
-        (stage_reference)
-        (keyword_end)))))

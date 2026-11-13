@@ -6,6 +6,7 @@ export default {
     // Inside `program`, bare BEGIN; is handled by begin_transaction_statement.
     $.keyword_transaction,
     optional($.keyword_work),
+    optional(seq($.keyword_name, $.identifier)),
     optional(';'),
     repeat(
       seq(
@@ -37,6 +38,7 @@ export default {
   commit_statement: $ => seq(
     $.keyword_commit,
     optional(choice($.keyword_transaction, $.keyword_work)),
+    optional(seq($.keyword_name, $.identifier)),
   ),
 
   // Standalone ROLLBACK; at top level or in scripting blocks
@@ -50,6 +52,7 @@ export default {
   begin_transaction_statement: $ => seq(
     choice($.keyword_begin, $.keyword_start),
     optional(choice($.keyword_transaction, $.keyword_work)),
+    optional(seq($.keyword_name, $.identifier)),
   ),
 
 };

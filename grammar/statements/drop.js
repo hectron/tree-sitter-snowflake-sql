@@ -6,14 +6,9 @@ export default {
     choice(
       $.drop_table,
       $.drop_view,
-      // $.drop_materialized_view, // removed: Postgres-specific, frees parse table budget
-      // $.drop_index, // removed: Postgres/MySQL-specific, frees parse table budget
-      // $.drop_type,  // removed: Postgres-specific, frees parse table budget
       $.drop_schema,
       $.drop_database,
-      $.drop_role,
-      // $.drop_sequence, // removed: Postgres-specific, frees parse table budget
-      // $.drop_extension, // removed: Postgres-specific, frees parse table budget
+      $.drop_index,
       $.drop_function,
       $.drop_procedure,
       // Snowflake
@@ -38,15 +33,6 @@ export default {
     optional($._drop_behavior),
   ),
 
-  drop_materialized_view: $ => seq(
-    $.keyword_drop,
-    $.keyword_materialized,
-    $.keyword_view,
-    optional($._if_exists),
-    $.object_reference,
-    optional($._drop_behavior),
-  ),
-
   drop_schema: $ => seq(
     $.keyword_drop,
     $.keyword_schema,
@@ -60,58 +46,15 @@ export default {
     $.keyword_database,
     optional($._if_exists),
     $.identifier,
-    optional($.keyword_with),
-    optional($.keyword_force),
+    optional($._drop_behavior),
   )),
 
-  drop_role: $ => seq(
-    $.keyword_drop,
-    choice(
-      $.keyword_group,
-      $.keyword_role,
-      $.keyword_user,
-    ),
-    optional($._if_exists),
-    $.identifier,
-  ),
-
-  drop_type: $ => seq(
-    $.keyword_drop,
-    $.keyword_type,
-    optional($._if_exists),
-    $.object_reference,
-    optional($._drop_behavior),
-  ),
-
-  drop_sequence: $ => seq(
-    $.keyword_drop,
-    $.keyword_sequence,
-    optional($._if_exists),
-    $.object_reference,
-    optional($._drop_behavior),
-  ),
-
+  // Snowflake hybrid tables: DROP INDEX [IF EXISTS] table.index
   drop_index: $ => seq(
     $.keyword_drop,
     $.keyword_index,
-    optional($.keyword_concurrently),
     optional($._if_exists),
-    field("name", $.identifier),
-    optional($._drop_behavior),
-    optional(
-      seq(
-          $.keyword_on,
-          $.object_reference,
-      ),
-    ),
-  ),
-
-  drop_extension: $ => seq(
-    $.keyword_drop,
-    $.keyword_extension,
-    optional($._if_exists),
-    comma_list($.identifier, true),
-    optional(choice($.keyword_cascade, $.keyword_restrict)),
+    $.object_reference,
   ),
 
   drop_function: $ => prec.left(seq(

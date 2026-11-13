@@ -44,3 +44,55 @@ WHERE id < (
           (limit
             (keyword_limit)
             (literal)))))))
+================================================================================
+Parenthesized expression whose first operand is a scalar subquery
+================================================================================
+
+SELECT ((SELECT 1) + 2) AS a, ((SELECT 1)) AS b, (SELECT 1) + (SELECT 2) AS c;
+
+--------------------------------------------------------------------------------
+
+(program
+  (statement
+    (select
+      (keyword_select)
+      (select_expression
+        (term
+          value: (parenthesized_expression
+            (binary_expression
+              left: (subquery
+                (select
+                  (keyword_select)
+                  (select_expression
+                    (term
+                      value: (literal)))))
+              right: (literal)))
+          (keyword_as)
+          alias: (identifier))
+        (term
+          value: (parenthesized_expression
+            (subquery
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    value: (literal))))))
+          (keyword_as)
+          alias: (identifier))
+        (term
+          value: (binary_expression
+            left: (subquery
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    value: (literal)))))
+            right: (subquery
+              (select
+                (keyword_select)
+                (select_expression
+                  (term
+                    value: (literal))))))
+          (keyword_as)
+          alias: (identifier))))))
+

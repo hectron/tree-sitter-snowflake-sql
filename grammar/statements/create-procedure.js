@@ -3,33 +3,54 @@ export default {
   create_procedure: $ => seq(
     $.keyword_create,
     optional(choice($._or_replace, $._or_alter)),
-    // mariadb/mysql
-    optional(seq($.keyword_definer, '=', $.identifier)),
     $.keyword_procedure,
     optional($._if_not_exists),
     $.object_reference,
     optional($.function_arguments),
+    $._procedure_definition,
+  ),
+
+  // WITH name AS PROCEDURE (args) RETURNS .. AS <body> CALL name(..)
+  call_with_procedure: $ => seq(
+    $.keyword_with,
+    $.identifier,
+    $.keyword_as,
+    $.keyword_procedure,
+    optional($.function_arguments),
+    $._procedure_definition,
+    $.call_statement,
+  ),
+
+  _procedure_definition: $ => seq(
+    // options (COPY GRANTS, LANGUAGE, ..) may precede RETURNS
+    repeat($._procedure_option),
     // Snowflake: RETURNS type [NOT NULL]
-    optional($.procedure_returns),
-    repeat(
-      choice(
-        $.function_language,
-        $.function_security,
-        $.function_safety,
-        $.procedure_execute_as,
-        $.procedure_comment,
+    optional(seq($.procedure_returns, repeat($._procedure_option))),
+    choice(
+      // SQL / Snowflake Scripting procedure
+      seq(
+        $.procedure_body,
+        repeat($._procedure_option),
+      ),
+      // Handler languages (Python, Java, ...): properties and a string body
+      seq(
+        $.routine_language,
+        repeat(choice($._procedure_option, $.routine_property)),
+        optional(seq(
+          $.routine_body,
+          repeat(choice($._procedure_option, $.routine_property)),
+        )),
       ),
     ),
-    $.procedure_body,
-    repeat(
-      choice(
-        $.function_language,
-        $.function_security,
-        $.function_safety,
-        $.procedure_execute_as,
-        $.procedure_comment,
-      ),
-    ),
+  ),
+
+  _procedure_option: $ => choice(
+    $.function_language,
+    $.procedure_execute_as,
+    $.procedure_comment,
+    $.function_strictness,
+    $.function_volatility,
+    $.copy_clause,
   ),
 
   // Snowflake: RETURNS type [NOT NULL] | RETURNS TABLE (col type, ...)
@@ -73,22 +94,10 @@ export default {
   procedure_comment: $ => seq(
     $.keyword_comment,
     '=',
-    alias($._single_quote_string, $.literal),
+    alias($._literal_string, $.literal),
   ),
 
   procedure_body: $ => choice(
-    // BEGIN ATOMIC block (SQL standard)
-    seq(
-      $.keyword_begin,
-      $.keyword_atomic,
-      repeat1(
-        seq(
-          $._function_body_statement,
-          ';',
-        ),
-      ),
-      $.keyword_end,
-    ),
     // Dollar-quoted Snowflake scripting block
     seq(
       $.keyword_as,
